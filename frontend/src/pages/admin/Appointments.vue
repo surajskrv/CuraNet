@@ -37,7 +37,7 @@
             <td>{{ appt.id }}</td>
             <td>{{ appt.patient_name }}</td>
             <td>{{ appt.doctor_name }}</td>
-            <td>{{ appt.specialization || 'N/A' }}</td>
+            <td>{{ appt.department || 'N/A' }}</td>
             <td>{{ formatDate(appt.scheduled_date) }}</td>
             <td>{{ appt.scheduled_time }}</td>
             <td>

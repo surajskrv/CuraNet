@@ -29,7 +29,7 @@
             <td>{{ idx + 1 }}</td>
             <td>{{ formatDate(record.scheduled_date) }}</td>
             <td>{{ record.doctor_name }}</td>
-            <td>{{ record.specialization }}</td>
+            <td>{{ record.department }}</td>
             <td>{{ record.treatment?.visit_type || 'N/A' }}</td>
             <td>{{ record.treatment?.tests_done || 'N/A' }}</td>
             <td>{{ record.treatment?.diagnosis || 'N/A' }}</td>

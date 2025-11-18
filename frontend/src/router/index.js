@@ -3,7 +3,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 const routes = [
   {
     path: '/',
-    redirect: '/login'
+    name: 'Home',
+    component: () => import('@/pages/LandingPage.vue')
   },
   {
     path: '/login',
@@ -80,36 +81,42 @@ const router = createRouter({
   routes
 })
 
-// Navigation guard
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('token')
-  const user = JSON.parse(localStorage.getItem('user') || '{}')
-  
-  // Public routes
-  if (to.path === '/login' || to.path === '/register') {
-    if (token && user.role) {
-      // Redirect to appropriate dashboard
-      if (user.role === 'admin') next('/admin/dashboard')
-      else if (user.role === 'doctor') next('/doctor/dashboard')
-      else if (user.role === 'patient') next('/patient/dashboard')
-      else next()
-    } else {
-      next()
-    }
-  } else {
-    // Protected routes
-    if (!token) {
-      next('/login')
-    } else if (to.path.startsWith('/admin') && user.role !== 'admin') {
-      next('/login')
-    } else if (to.path.startsWith('/doctor') && user.role !== 'doctor') {
-      next('/login')
-    } else if (to.path.startsWith('/patient') && user.role !== 'patient') {
-      next('/login')
-    } else {
-      next()
-    }
-  }
-})
+  const token = localStorage.getItem("token");
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
 
+  const isAuth = !!token && !!user.role;
+
+  // Redirect authenticated users away from the landing page
+  if (to.path === "/" && isAuth) {
+    if (user.role === "admin") return next("/admin/dashboard");
+    if (user.role === "doctor") return next("/doctor/dashboard");
+    if (user.role === "patient") return next("/patient/dashboard");
+  }
+
+  // Public pages for unauthenticated users
+  const publicPages = ["/", "/login", "/register"];
+
+  // If user NOT authenticated → allow only public pages
+  if (!isAuth && !publicPages.includes(to.path)) {
+    return next("/");
+  }
+
+  // Authenticated users trying to access login/register → redirect to dashboard
+  if (isAuth && (to.path === "/login" || to.path === "/register")) {
+    if (user.role === "admin") return next("/admin/dashboard");
+    if (user.role === "doctor") return next("/doctor/dashboard");
+    if (user.role === "patient") return next("/patient/dashboard");
+  }
+
+  // Role-based route protection
+  if (to.path.startsWith("/admin") && user.role !== "admin")
+    return next("/");
+  if (to.path.startsWith("/doctor") && user.role !== "doctor")
+    return next("/");
+  if (to.path.startsWith("/patient") && user.role !== "patient")
+    return next("/");
+
+  next();
+});
 export default router

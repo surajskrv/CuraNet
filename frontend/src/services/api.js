@@ -194,7 +194,7 @@ export const patientAPI = {
   getDeaprtment: () =>
     apiRequest('/patient/deaprtment'),
   
-  getDoctorsBySpecialization: (specId) =>
+  getDoctorsByDepartment: (specId) =>
     apiRequest(`/patient/deaprtment/${specId}/doctors`),
   
   getDoctorDetails: (doctorId) =>

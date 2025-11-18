@@ -33,7 +33,7 @@ A comprehensive web application for managing hospital operations with role-based
 ### Patient Features
 - Register and login
 - View departments/deaprtment
-- Browse doctors by specialization
+- Browse doctors by department
 - View doctor profiles and availability
 - Book appointments
 - Cancel appointments
@@ -162,7 +162,7 @@ The database (`hospital.db`) will be created automatically when you first run th
 ### Patient
 - `GET /api/patient/dashboard` - Patient dashboard
 - `GET /api/patient/deaprtment` - List deaprtment
-- `GET /api/patient/deaprtment/<id>/doctors` - Doctors by specialization
+- `GET /api/patient/deaprtment/<id>/doctors` - Doctors by department
 - `GET /api/patient/doctors/<id>/availability` - Doctor availability
 - `POST /api/patient/appointments` - Book appointment
 - `POST /api/patient/appointments/<id>/cancel` - Cancel appointment

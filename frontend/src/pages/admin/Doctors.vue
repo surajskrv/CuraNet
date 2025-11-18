@@ -9,7 +9,7 @@
       <input
         type="text"
         class="form-control"
-        placeholder="Search doctors by name, username, or specialization..."
+        placeholder="Search doctors by name, username, or department..."
         v-model="searchQuery"
         @input="searchDoctors"
       />
@@ -27,7 +27,7 @@
             <th>Name</th>
             <th>Username</th>
             <th>Email</th>
-            <th>Specialization</th>
+            <th>Department</th>
             <th>Experience</th>
             <th>Status</th>
             <th>Actions</th>
@@ -39,7 +39,7 @@
             <td>{{ doctor.full_name }}</td>
             <td>{{ doctor.username }}</td>
             <td>{{ doctor.email }}</td>
-            <td>{{ doctor.specialization || 'N/A' }}</td>
+            <td>{{ doctor.department || 'N/A' }}</td>
             <td>{{ doctor.experience_years || 0 }} years</td>
             <td>
               <span :class="doctor.is_active ? 'badge bg-success' : 'badge bg-danger'">
@@ -88,9 +88,9 @@
                 </div>
               </div>
               <div class="mb-3">
-                <label class="form-label">Specialization *</label>
-                <select class="form-select" v-model="doctorForm.specialization_id" required>
-                  <option value="">Select Specialization</option>
+                <label class="form-label">Department *</label>
+                <select class="form-select" v-model="doctorForm.department_id" required>
+                  <option value="">Select Department</option>
                   <option v-for="spec in deaprtment" :key="spec.id" :value="spec.id">
                     {{ spec.name }}
                   </option>
@@ -141,7 +141,7 @@ export default {
         password: '',
         first_name: '',
         last_name: '',
-        specialization_id: '',
+        department_id: '',
         experience_years: null,
         qualifications: '',
         bio: '',
@@ -183,7 +183,7 @@ export default {
         email: doctor.email,
         first_name: doctor.first_name,
         last_name: doctor.last_name,
-        specialization_id: doctor.specialization_id,
+        department_id: doctor.department_id,
         experience_years: doctor.experience_years,
         qualifications: doctor.qualifications || '',
         bio: doctor.bio || '',
@@ -228,7 +228,7 @@ export default {
         password: '',
         first_name: '',
         last_name: '',
-        specialization_id: '',
+        department_id: '',
         experience_years: null,
         qualifications: '',
         bio: '',

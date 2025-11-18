@@ -28,7 +28,7 @@
                 <td>{{ formatDate(appt.scheduled_date) }}</td>
                 <td>{{ appt.scheduled_time }}</td>
                 <td>{{ appt.doctor_name }}</td>
-                <td>{{ appt.specialization }}</td>
+                <td>{{ appt.department }}</td>
                 <td>
                   <button class="btn btn-sm btn-danger" @click="cancelAppointment(appt.id)">Cancel</button>
                 </td>
@@ -106,7 +106,7 @@
         <div class="modal-dialog modal-lg" @click.stop>
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title">Doctors in {{ selectedSpecialization?.name }}</h5>
+              <h5 class="modal-title">Doctors in {{ selectedDepartment?.name }}</h5>
               <button type="button" class="btn-close" @click="showDoctorsModal = false"></button>
             </div>
             <div class="modal-body">
@@ -142,7 +142,7 @@ export default {
       showBookingModal: false,
       showDoctorsModal: false,
       selectedDoctor: null,
-      selectedSpecialization: null,
+      selectedDepartment: null,
       selectedSlot: null,
       availableSlots: [],
       availabilityLoading: false,
@@ -167,11 +167,11 @@ export default {
       }
     },
     async viewDoctors(specId) {
-      this.selectedSpecialization = this.dashboardData.deaprtment.find(s => s.id === specId)
+      this.selectedDepartment = this.dashboardData.deaprtment.find(s => s.id === specId)
       this.showDoctorsModal = true
       this.doctorsLoading = true
       try {
-        this.doctorsList = await patientAPI.getDoctorsBySpecialization(specId)
+        this.doctorsList = await patientAPI.getDoctorsByDepartment(specId)
       } catch (error) {
         alert('Failed to load doctors: ' + error.message)
       } finally {
