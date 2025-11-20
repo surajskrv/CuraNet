@@ -36,28 +36,34 @@
 </template>
 
 <script>
-import { removeAuthToken } from '@/services/api'
-import { useRouter } from 'vue-router'
 
 export default {
   name: 'PatientLayout',
-  setup() {
-    const router = useRouter()
-    return { router }
-  },
   data() {
     return {
-      navbarOpen: false,
-      userData: JSON.parse(localStorage.getItem('user') || '{}')
+      navbarOpen: false
     }
   },
   methods: {
     toggleNavbar() {
       this.navbarOpen = !this.navbarOpen
     },
-    handleLogout() {
-      removeAuthToken()
-      this.router.push('/login')
+    async handleLogout() {
+      // 1. Clear ALL data saved during login
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user_id');
+      localStorage.removeItem('user_role');
+
+      // 2. (Optional) Notify Backend to kill the session cookie
+      // This is important because your Flask backend uses login_user()
+      try {
+        await fetch('/api/logout'); 
+      } catch (error) {
+        console.warn("Backend logout failed, but frontend is cleared.");
+      }
+
+      // 3. Redirect to Login
+      this.$router.push('/login');
     }
   }
 }
@@ -68,4 +74,3 @@ export default {
   font-weight: bold;
 }
 </style>
-

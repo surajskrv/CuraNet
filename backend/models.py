@@ -22,7 +22,7 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String, nullable = False)
     address = db.Column(db.String, nullable=False, default ="Patna")
     pincode = db.Column(db.String(6), nullable = False, default = '123456')
-    phone = db.Column(db.String(15), nullable=True)
+    phone = db.Column(db.String(10), nullable=False, default="0000000000")
     fs_uniquifier = db.Column(db.String, unique = True, nullable = False)
     active = db.Column(db.Boolean, nullable = False, default=True)
     roles = db.relationship('Role', backref = 'bearer', secondary= 'user_roles')
@@ -35,9 +35,9 @@ class Department(db.Model):
     __tablename__ = 'department'
     id = db.Column(db.Integer, primary_key = True)
     name = db.Column(db.String, nullable = False, unique = True)
-    description = db.Column(db.Text, nullable = True)
+    description = db.Column(db.Text, nullable = False)
     doctors_registered = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     
     doctors = db.relationship('Doctor', backref='department', lazy=True)
 
@@ -47,11 +47,11 @@ class Doctor(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable = False, unique = True)
     specialization = db.Column(db.String, nullable = False)
     department_id = db.Column(db.Integer, db.ForeignKey('department.id'), nullable = True)
-    qualification = db.Column(db.String, nullable = True)
-    experience = db.Column(db.String, nullable = True)
-    bio = db.Column(db.Text, nullable = True)
+    qualification = db.Column(db.String, nullable = False)
+    experience = db.Column(db.String, nullable = False)
+    bio = db.Column(db.Text, nullable = False)
     is_active = db.Column(db.Boolean, default=True, nullable = False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     
     appointments = db.relationship('Appointment', backref='doctor', lazy=True, cascade='all, delete-orphan')
     availabilities = db.relationship('DoctorAvailability', backref='doctor', lazy=True, cascade='all, delete-orphan')
@@ -60,13 +60,13 @@ class Patient(db.Model):
     __tablename__ = 'patient'
     id = db.Column(db.Integer, primary_key = True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable = False, unique = True)
-    date_of_birth = db.Column(db.Date, nullable = True)
-    gender = db.Column(db.String(10), nullable = True)
-    blood_group = db.Column(db.String(5), nullable = True)
+    date_of_birth = db.Column(db.Date, nullable = False)
+    gender = db.Column(db.String(10), nullable = False)
+    blood_group = db.Column(db.String(5), nullable = False)
     medical_history = db.Column(db.Text, nullable = True)
     emergency_contact = db.Column(db.String(15), nullable = True)
     is_active = db.Column(db.Boolean, default=True, nullable = False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     
     appointments = db.relationship('Appointment', backref='patient', lazy=True, cascade='all, delete-orphan')
 
@@ -90,8 +90,8 @@ class Appointment(db.Model):
     time = db.Column(db.Time, nullable = False)
     status = db.Column(db.String(20), default='Booked', nullable = False)  # Booked, Completed, Cancelled
     reason = db.Column(db.Text, nullable = True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     
     treatment = db.relationship('Treatment', backref='appointment', uselist=False, cascade='all, delete-orphan')
     
@@ -104,6 +104,6 @@ class Treatment(db.Model):
     diagnosis = db.Column(db.Text, nullable = True)
     prescription = db.Column(db.Text, nullable = True)
     notes = db.Column(db.Text, nullable = True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     

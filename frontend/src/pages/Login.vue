@@ -38,50 +38,47 @@
                     v-model="formData.email"
                   />
                 </div>
-
-                <!-- Password (Fixed eye icon position) -->
-                <div class="mb-3 position-relative">
+                <!-- Password -->
+                <div class="mb-3">
                   <label for="password" class="form-label">Password</label>
+                  
+                  <div class="position-relative">
+                    <input
+                      id="password"
+                      name="password"
+                      class="form-control pe-5"
+                      placeholder="password"
+                      :type="showPassword ? 'text' : 'password'"
+                      required
+                      v-model="formData.password"
+                    />
 
-                  <input
-                    id="password"
-                    name="password"
-                    class="form-control pe-5"
-                    placeholder="password"
-                    :type="showPassword ? 'text' : 'password'"
-                    required
-                    v-model="formData.password"
-                  />
-
-                  <button
-                    type="button"
-                    class="btn btn-sm position-absolute top-50 end-0 translate-middle-y border-0 bg-transparent"
-                    @click="togglePass"
-                  >
-                    <i
-                      :class="showPassword ? 'bi bi-eye-fill text-primary' : 'bi bi-eye-slash-fill text-secondary'"
-                      style="font-size: 20px"
-                    ></i>
-                  </button>
+                    <button
+                      type="button"
+                      class="btn position-absolute top-50 end-0 translate-middle-y border-0 bg-transparent me-1"
+                      @click="togglePass"
+                      style="z-index: 5;"
+                    >
+                      <i
+                        :class="showPassword ? 'bi bi-eye-fill text-danger' : 'bi bi-eye-slash-fill text-secondary'"
+                        style="font-size: 1.5rem;"
+                      ></i>
+                    </button>
+                  </div>
                 </div>
 
-                <!-- Buttons -->
                 <div class="d-flex flex-column flex-sm-row justify-content-between gap-2 mt-4">
-                  <router-link to="/register" class="btn btn-outline-primary flex-grow-1">
-                    Register
-                  </router-link>
-                  <button type="submit" class="btn btn-outline-success flex-grow-1">Login</button>
+                  <button type="submit" class="btn btn-outline-success flex-grow-1 mb-3">Login</button>
                 </div>
-
+                <div class="text-center">
+                  <p class="mb-0">Don't have an account? <router-link to="/register">Register</router-link></p>
+                </div>
               </form>
-
             </div>
-
           </div>
         </div>
       </div>
     </main>
-
   </div>
 </template>
 <script>
@@ -100,31 +97,47 @@ export default {
   methods: {
     async loginUser() {
       try {
-        const response = await fetch("/api/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: {
+            "Content-Type": 'application/json'
+          },
           body: JSON.stringify(this.formData)
         });
 
         const data = await response.json();
 
-        if (!response.ok) throw new Error(data.message);
-
+        if (!response.ok) {
+          throw new Error(data.message || 'Login failed. Please try again.');
+        }
+        
         localStorage.setItem("auth_token", data.auth_token);
         localStorage.setItem("user_id", data.user_id);
         localStorage.setItem("user_role", data.user_role);
 
-        switch (data.user_role) {
-          case "admin": this.$router.push("/adminHome"); break;
-          case "user": this.$router.push("/userHome"); break;
-          default: this.$router.push("/notFound");
+
+        this.$emit('login');
+
+        switch(data.user_role) {
+          case 'admin':
+            this.$router.push('/admin/dashboard');
+            break;
+          case 'patient':
+            this.$router.push('/patient/dashboard');
+            break;
+          case 'doctor':
+            this.$router.push('/doctor/dashboard');
+            break;
+          default:
+            this.$router.push('/login');
+            break;
         }
 
       } catch (error) {
+        console.error("Login error:", error);
         this.emessage = error.message;
       }
     },
-
     togglePass() {
       this.showPassword = !this.showPassword;
     }

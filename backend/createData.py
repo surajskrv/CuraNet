@@ -12,7 +12,7 @@ with app.app_context():
     app.security.datastore.find_or_create_role(name='doctor', description = 'doctor')
     db.session.commit()
     
-    # Create departments first
+    # Create departments if not exist
     if not Department.query.filter_by(name='Cardiology').first():
         cardiology = Department(name='Cardiology', description='Heart and cardiovascular diseases')
         db.session.add(cardiology)
@@ -27,15 +27,12 @@ with app.app_context():
         db.session.add(pediatrics)
     db.session.commit()
     
-    # Get departments for use
-    cardiology = Department.query.filter_by(name='Cardiology').first()
-    
-    # Create Admin
-    if not app.security.datastore.find_user(email= 'admin@hospital.com'):
+    # Create Admin if not exist
+    if not app.security.datastore.find_user(email= 'admin@gmail.com'):
         admin_user = app.security.datastore.create_user(
-            email='admin@hospital.com',
+            email='admin@gmail.com',
             name='Admin', 
-            password=hash_password('admin123'), 
+            password=hash_password('helloadmin'), 
             roles=['admin'],
             active=True
         )
@@ -70,7 +67,7 @@ with app.app_context():
         )
         db.session.commit()
         
-        doctor = Doctor(user_id=user.id, specialization='Cardiology', department_id=cardiology.id, qualification='MD, MBBS', experience='10 years', bio='Expert in cardiovascular diseases')
+        doctor = Doctor(user_id=user.id, specialization='Cardiology', department_id=cardiology.id, qualification='MD, MBBS', experience='10', bio='Expert in cardiovascular diseases')
         db.session.add(doctor)
         db.session.commit()
         

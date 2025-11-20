@@ -3,6 +3,7 @@ from flask_security import login_user, hash_password, verify_password, auth_requ
 from  ..extensions import db
 from ..models import Patient
 import re
+from datetime import datetime
 
 datastore = app.security.datastore
 
@@ -41,56 +42,85 @@ def login():
 def register():
     try:
         data = request.get_json()
-        email = data['email']
-        password = data['password']
-        password2 = data['password2']
-        name = data['name']
-        address = data['address']
-        pincode = data['pincode']
-        
         if not data:
-            return jsonify({"message": "Error in data!"}), 400
-        
-        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-            return jsonify({"message": "Enter a valid Email Id"}), 400
-        
-        if not email or not password or not password2 or not name or not address or not pincode:
+            return jsonify({"message": "No input data provided"}), 400
+
+        email = data.get('email')
+        password = data.get('password')
+        password2 = data.get('password2') #
+        name = data.get('name')
+        address = data.get('address')
+        pincode = data.get('pincode')
+        phone = data.get('phone')
+        blood_group = data.get('blood_group') 
+        gender = data.get('gender')
+        dob_str = data.get('date_of_birth') 
+
+        # --- Validations
+        if not all([email, password, name, address, pincode, phone, blood_group, gender, dob_str]):
             return jsonify({"message": "All fields are required"}), 400
 
-        if password != password2:
-            return jsonify({"message": "Passwords don't match"}), 400
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            return jsonify({"message": "Invalid email address"}), 400
 
-        if len(password) < 4:
+        if password2 and password != password2:
+            return jsonify({"message": "Passwords do not match"}), 400
+
+        if len(password) < 5:
             return jsonify({"message": "Password must be at least 5 characters"}), 400
         
         if app.security.datastore.find_user(email=email):
             return jsonify({"message": "Email already registered"}), 409
 
-        else:
-            user = app.security.datastore.create_user(
-                email=email,
-                password=hash_password(password),
-                name=name,
-                address=address,
-                pincode=pincode,
-                roles=['patient']
-            )
-            db.session.commit() 
-            
-            # Create patient profile
-            patient = Patient(user_id=user.id)
-            db.session.add(patient)
-            db.session.commit()
-            
-            login_user(user)
-            
-            return jsonify({"message" : "User is created",
-                            "auth_token": user.get_auth_token(),
-                            "user_role": user.roles[0].name,
-                            }), 201
+        # 3. Date Conversion (String -> Python Date Object)
+        try:
+            # Assumes frontend sends YYYY-MM-DD
+            dob_date = datetime.strptime(dob_str, '%Y-%m-%d').date()
+        except ValueError:
+            return jsonify({"message": "Invalid date format"}), 400
+
+        # 4. Create User
+        user = app.security.datastore.create_user(
+            email=email,
+            password=hash_password(password),
+            name=name,
+            address=address,
+            pincode=pincode,
+            phone=phone,
+            roles=['patient'],
+            active=True
+        )
+        
+        # Flush sends the user to DB to generate the user.id, but doesn't commit yet
+        db.session.flush() 
+
+        # 5. Create Patient Profile
+        patient = Patient(
+            user_id=user.id, 
+            date_of_birth=dob_date, 
+            gender=gender, 
+            blood_group=blood_group
+        )
+        
+        db.session.add(patient)
+        
+        # 6. Single Commit for both tables
+        db.session.commit()
+        
+        # Optional: Log them in immediately (creates session cookie)
+        # login_user(user) 
+        
+        return jsonify({
+            "message" : "Registration successful",
+            "auth_token": user.get_auth_token(), # Ensure your User model supports this
+            "user_role": "patient",
+            "user_id": user.id
+        }), 201
 
     except Exception as e:
-        return jsonify({"message": "Error in registration", "error": str(e)}), 500
+        db.session.rollback() # Undo changes if error occurs
+        print(f"Registration Error: {e}") # Print to server console for debugging
+        return jsonify({"message": "Internal Error in registration", "error": str(e)}), 500
     
 @app.route('/api/logout', methods=['POST'])
 @auth_required('token')

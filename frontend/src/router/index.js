@@ -81,42 +81,57 @@ const router = createRouter({
   routes
 })
 
+// --- FIXED NAVIGATION GUARD ---
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem("token");
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  // 1. Retrieve keys exactly as you set them in loginUser()
+  const token = localStorage.getItem("auth_token");
+  const role = localStorage.getItem("user_role");
 
-  const isAuth = !!token && !!user.role;
+  // 2. Check if user is authenticated
+  const isAuthenticated = !!token && !!role;
 
-  // Redirect authenticated users away from the landing page
-  if (to.path === "/" && isAuth) {
-    if (user.role === "admin") return next("/admin/dashboard");
-    if (user.role === "doctor") return next("/doctor/dashboard");
-    if (user.role === "patient") return next("/patient/dashboard");
-  }
-
-  // Public pages for unauthenticated users
+  // 3. Define public pages (Pages anyone can see)
   const publicPages = ["/", "/login", "/register"];
+  const authRequired = !publicPages.includes(to.path);
 
-  // If user NOT authenticated → allow only public pages
-  if (!isAuth && !publicPages.includes(to.path)) {
-    return next("/");
+  // --- LOGIC FLOW ---
+
+  // Case A: User is NOT logged in and tries to access a restricted page
+  if (authRequired && !isAuthenticated) {
+    return next('/login');
   }
 
-  // Authenticated users trying to access login/register → redirect to dashboard
-  if (isAuth && (to.path === "/login" || to.path === "/register")) {
-    if (user.role === "admin") return next("/admin/dashboard");
-    if (user.role === "doctor") return next("/doctor/dashboard");
-    if (user.role === "patient") return next("/patient/dashboard");
+  // Case B: User IS logged in but tries to access Login/Register/Landing
+  if (isAuthenticated && publicPages.includes(to.path)) {
+     if (role === 'admin') return next('/admin/dashboard');
+     if (role === 'doctor') return next('/doctor/dashboard');
+     if (role === 'patient') return next('/patient/dashboard');
   }
 
-  // Role-based route protection
-  if (to.path.startsWith("/admin") && user.role !== "admin")
-    return next("/");
-  if (to.path.startsWith("/doctor") && user.role !== "doctor")
-    return next("/");
-  if (to.path.startsWith("/patient") && user.role !== "patient")
-    return next("/");
+  // Case C: Role-Based Security (Prevent Patient from seeing Admin pages)
+  if (isAuthenticated) {
+    if (to.path.startsWith("/admin") && role !== "admin") {
+      // Unauthorized access -> send back to their own dashboard
+      if (role === 'doctor') return next('/doctor/dashboard');
+      if (role === 'patient') return next('/patient/dashboard');
+      return next('/'); 
+    }
+    
+    if (to.path.startsWith("/doctor") && role !== "doctor") {
+      if (role === 'admin') return next('/admin/dashboard');
+      if (role === 'patient') return next('/patient/dashboard');
+      return next('/');
+    }
 
+    if (to.path.startsWith("/patient") && role !== "patient") {
+       if (role === 'admin') return next('/admin/dashboard');
+       if (role === 'doctor') return next('/doctor/dashboard');
+       return next('/');
+    }
+  }
+
+  // If none of the above block the request, proceed
   next();
 });
-export default router
+
+export default router;

@@ -39,15 +39,9 @@
 </template>
 
 <script>
-import { removeAuthToken } from '@/services/api'
-import { useRouter } from 'vue-router'
 
 export default {
   name: 'AdminLayout',
-  setup() {
-    const router = useRouter()
-    return { router }
-  },
   data() {
     return {
       navbarOpen: false
@@ -57,9 +51,20 @@ export default {
     toggleNavbar() {
       this.navbarOpen = !this.navbarOpen
     },
-    handleLogout() {
-      removeAuthToken()
-      this.router.push('/login')
+    async handleLogout() {
+      // 1. Clear ALL data saved during login
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user_id');
+      localStorage.removeItem('user_role');
+
+      try {
+        await fetch('/api/logout'); 
+      } catch (error) {
+        console.warn("Backend logout failed, but frontend is cleared.");
+      }
+
+      // 3. Redirect to Login
+      this.$router.push('/login');
     }
   }
 }
@@ -70,4 +75,3 @@ export default {
   font-weight: bold;
 }
 </style>
-

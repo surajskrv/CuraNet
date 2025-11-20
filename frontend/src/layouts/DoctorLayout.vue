@@ -16,26 +16,31 @@
 </template>
 
 <script>
-import { removeAuthToken } from '@/services/api'
-import { useRouter } from 'vue-router'
 
 export default {
   name: 'DoctorLayout',
-  setup() {
-    const router = useRouter()
-    return { router }
-  },
   data() {
     return {
-      userData: JSON.parse(localStorage.getItem('user') || '{}')
+      navbarOpen: false
     }
   },
   methods: {
-    handleLogout() {
-      removeAuthToken()
-      this.router.push('/login')
+    toggleNavbar() {
+      this.navbarOpen = !this.navbarOpen
+    },
+    async handleLogout() {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user_id');
+      localStorage.removeItem('user_role');
+
+      try {
+        await fetch('/api/logout'); 
+      } catch (error) {
+        console.warn("Backend logout failed, but frontend is cleared.");
+      }
+
+      this.$router.push('/login');
     }
   }
 }
 </script>
-

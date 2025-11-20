@@ -4,21 +4,21 @@
       <div class="col-md-8 col-lg-6">
         <div class="card shadow">
           <div class="card-body">
-            <h3 class="card-title text-center mb-4">Register</h3>
-            <div class="text-right mt-3">
-              <router-link to="/" class="btn btn-outline-primary px-4 py-2">
-                <i class="bi bi-house-door-fill me-2"></i>
+            
+            <div class="text-center mb-4">
+              <h3 class="card-title">CuraNet</h3>
+            </div>
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h4 class="mb-0">Register</h4>
+              <router-link to="/" class="btn btn-outline-primary btn-sm px-3">
+                <i class="bi bi-house-door-fill me-1"></i>
                 Back to Home
               </router-link>
             </div>
 
-            
-            <div v-if="error" class="alert alert-danger" role="alert">
-              {{ error }}
-            </div>
-            
-            <div v-if="success" class="alert alert-success" role="alert">
-              {{ success }}
+            <div v-if="emessage" class="alert alert-danger" role="alert">
+              {{ emessage }}
             </div>
             
             <form @submit.prevent="handleRegister">
@@ -52,32 +52,31 @@
                     type="password"
                     class="form-control"
                     id="confirmPassword"
-                    v-model="confirmPassword"
+                    v-model="formData.password2"
                     required
                   />
                 </div>
               </div>
               <div class="row">
                 <div class="col-md-6 mb-3">
-                  <label for="firstName" class="form-label">First Name *</label>
+                  <label for="fullName" class="form-label">Full Name *</label>
                   <input
                     type="text"
                     class="form-control"
-                    id="firstName"
-                    v-model="formData.first_name"
+                    id="fullName"
+                    v-model="formData.name"
                     required
                   />
                 </div>
                 
                 <div class="col-md-6 mb-3">
-                  <label for="lastName" class="form-label">Last Name *</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="lastName"
-                    v-model="formData.last_name"
-                    required
-                  />
+                  <label for="gender" class="form-label">Gender *</label>
+                  <select class="form-select" id="gender" v-model="formData.gender" required>
+                    <option value="" disabled>Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
                 </div>
               </div>  
                 <div class="row">
@@ -100,12 +99,41 @@
                       id="contactNumber"
                       v-model="formData.contact_number"
                       required
+                      pattern="[0-9]{10}"
+                    />
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="blood" class="form-label">Blood Group *</label>
+                    <select class="form-select" id="blood" v-model="formData.blood_group" required>
+                        <option value="" disabled>Select Group</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                    </select>
+                  </div>
+                  
+                  <div class="col-md-6 mb-3">
+                    <label for="pincode" class="form-label">Pincode *</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="pincode"
+                      v-model="formData.pincode"
+                      required
+                      pattern="[0-9]{6}"
                     />
                   </div>
                 </div>
                 
                 <div class="mb-3">
-                  <label for="address" class="form-label">Address</label>
+                  <label for="address" class="form-label">Address *</label>
                   <textarea
                     class="form-control"
                     id="address"
@@ -114,13 +142,9 @@
                   ></textarea>
                 </div>
               
-              <button type="submit" class="btn btn-primary w-100 mb-3" :disabled="loading || !passwordsMatch">
-                {{ loading ? 'Registering...' : 'Register' }}
+              <button type="submit" class="btn btn-primary w-100 mb-3" :disabled="isLoading">
+                {{ isLoading ? 'Registering...' : 'Register' }}
               </button>
-              
-              <div v-if="!passwordsMatch" class="alert alert-warning" role="alert">
-                Passwords do not match
-              </div>
             </form>
             
             <div class="text-center">
@@ -134,66 +158,88 @@
 </template>
 
 <script>
-import { authAPI, setAuthToken } from '@/services/api'
-import { patientAPI } from '@/services/api'
-import { useRouter } from 'vue-router'
-
 export default {
-  name: 'Register',
-  setup() {
-    const router = useRouter()
-    return { router }
-  },
   data() {
     return {
       formData: {
-        role: 'patient',
-        username: '',
-        email: '',
-        password: '',
-        first_name: '',
-        last_name: '',
-        date_of_birth: '',
-        contact_number: '',
-        address: '',
+        email: "",
+        password: "",
+        password2: "",
+        name: "",
+        address: "",
+        pincode: "",
+        contact_number: "",
+        date_of_birth: "",
+        gender: "",
+        blood_group: "",
       },
-      confirmPassword: '',
-      error: '',
-      success: '',
-      loading: false
-    }
-  },
-  computed: {
-    passwordsMatch() {
-      return this.formData.password === this.confirmPassword || !this.formData.password
-    }
+      emessage: "",
+      isLoading: false, // Added missing state
+    };
   },
   methods: {
+    // RENAMED from addUser to handleRegister so the form can find it
     async handleRegister() {
-      if (!this.passwordsMatch) {
-        this.error = 'Passwords do not match'
-        return
+      if (this.formData.password !== this.formData.password2) {
+        this.emessage= "Passwords do not match";
+        return;
       }
-      
-      this.error = ''
-      this.success = ''
-      this.loading = true
-      
+
+      if (this.formData.password.length < 5) {
+        this.emessage = "Password must be at least 5 characters";
+        return;
+      }
+
+      if (!/^\d{6}$/.test(this.formData.pincode)) {
+        this.emessage = "Please enter a valid 6-digit pincode number";
+        return;
+      }
+      if (!/^\d{10}$/.test(this.formData.contact_number)) {
+        this.emessage = "Please enter a valid 10-digit phone number";
+        return;
+      }
+
+      this.isLoading = true;
+      this.emessage = "";
+
       try {
-        const response = await authAPI.register(this.formData)
-        this.success = 'Registration successful! Redirecting to login...'
-        
-        setTimeout(() => {
-          this.router.push('/login')
-        }, 2000)
+        const response = await fetch("/api/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: this.formData.email,
+            password: this.formData.password,
+            name: this.formData.name,
+            address: this.formData.address,
+            pincode: this.formData.pincode,
+            phone: this.formData.contact_number, // Mapping contact_number to phone
+            date_of_birth: this.formData.date_of_birth,
+            blood_group: this.formData.blood_group,
+            gender: this.formData.gender,
+            role: "patient" // Explicitly telling backend this is a patient
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          // Use backend message if available
+          throw new Error(data.message || "Registration failed");
+        }
+
+        alert("Registration successful! Please login.");
+        this.$router.push("/login");
       } catch (error) {
-        this.error = error.message || 'Registration failed. Please try again.'
+        this.emessage = error.message; // Show the actual error from backend
+        console.error("Registration error:", error);
       } finally {
-        this.loading = false
+        this.isLoading = false;
       }
-    }
-  }
-}
+    },
+  },
+};
 </script>
 
 <style scoped>
