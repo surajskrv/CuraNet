@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 const routes = [
+  // --- PUBLIC ROUTES ---
   {
     path: '/',
     name: 'Home',
@@ -16,6 +17,8 @@ const routes = [
     name: 'Register',
     component: () => import('@/pages/Register.vue')
   },
+
+  // --- ADMIN ROUTES ---
   {
     path: '/admin',
     component: () => import('@/layouts/AdminLayout.vue'),
@@ -42,6 +45,8 @@ const routes = [
       }
     ]
   },
+
+  // --- DOCTOR ROUTES ---
   {
     path: '/doctor',
     component: () => import('@/layouts/DoctorLayout.vue'),
@@ -50,9 +55,16 @@ const routes = [
         path: 'dashboard',
         name: 'DoctorDashboard',
         component: () => import('@/pages/doctor/Dashboard.vue')
+      },
+      {
+        path: 'history', 
+        name: 'DoctorHistory',
+        component: () => import('@/pages/doctor/History.vue')
       }
     ]
   },
+
+  // --- PATIENT ROUTES ---
   {
     path: '/patient',
     component: () => import('@/layouts/PatientLayout.vue'),
@@ -81,37 +93,31 @@ const router = createRouter({
   routes
 })
 
-// --- FIXED NAVIGATION GUARD ---
+// --- NAVIGATION GUARD ---
 router.beforeEach((to, from, next) => {
-  // 1. Retrieve keys exactly as you set them in loginUser()
   const token = localStorage.getItem("auth_token");
   const role = localStorage.getItem("user_role");
+  const isAuthenticated = !!token;
 
-  // 2. Check if user is authenticated
-  const isAuthenticated = !!token && !!role;
-
-  // 3. Define public pages (Pages anyone can see)
   const publicPages = ["/", "/login", "/register"];
   const authRequired = !publicPages.includes(to.path);
 
-  // --- LOGIC FLOW ---
-
-  // Case A: User is NOT logged in and tries to access a restricted page
+  // 1. If trying to access a protected page without login -> Go to Login
   if (authRequired && !isAuthenticated) {
     return next('/login');
   }
 
-  // Case B: User IS logged in but tries to access Login/Register/Landing
+  // 2. If Logged in and trying to access Public Pages -> Redirect to Dashboard
   if (isAuthenticated && publicPages.includes(to.path)) {
      if (role === 'admin') return next('/admin/dashboard');
      if (role === 'doctor') return next('/doctor/dashboard');
      if (role === 'patient') return next('/patient/dashboard');
   }
 
-  // Case C: Role-Based Security (Prevent Patient from seeing Admin pages)
+  // 3. Role-Based Access Control (RBAC)
   if (isAuthenticated) {
     if (to.path.startsWith("/admin") && role !== "admin") {
-      // Unauthorized access -> send back to their own dashboard
+      // Redirect unauthorized access to their own dashboard
       if (role === 'doctor') return next('/doctor/dashboard');
       if (role === 'patient') return next('/patient/dashboard');
       return next('/'); 
@@ -130,7 +136,6 @@ router.beforeEach((to, from, next) => {
     }
   }
 
-  // If none of the above block the request, proceed
   next();
 });
 

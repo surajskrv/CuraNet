@@ -1,10 +1,8 @@
 <template>
   <div class="d-flex flex-column min-vh-100 bg-light">
-    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
       <div class="container">
         <a class="navbar-brand fw-bold" href="#">
-          <span class="hospital-logo-circle me-2"></span>
           CityCare Hospital
         </a>
 
@@ -36,7 +34,7 @@
             </li>
             <li class="nav-item ms-lg-3 mt-2 mt-lg-0">
               <router-link class="btn btn-outline-primary btn-sm" to="/login">
-                Patient Login
+                Login
               </router-link>
             </li>
             <li class="nav-item ms-2 mt-2 mt-lg-0">
@@ -66,10 +64,7 @@
                 Book an Appointment
               </router-link>
               <router-link class="btn btn-outline-light btn-lg" to="/login">
-                Patient Login
-              </router-link>
-              <router-link class="btn btn-outline-light btn-lg" to="/login">
-                Doctor Login
+                Login
               </router-link>
             </div>
             <p class="small text-white-50 mt-3 mb-0">
@@ -99,15 +94,12 @@
                   </div>
                 </div>
                 <div class="d-grid gap-2">
-                  <router-link class="btn btn-primary" to="/login">
-                    Login to Patient Portal
-                  </router-link>
-                  <router-link class="btn btn-outline-primary" to="/login">
-                    Login to Doctor Portal
+                  <router-link class="btn btn-primary" to="/register">
+                    Register
                   </router-link>
                 </div>
                 <p class="small text-muted mt-3 mb-0">
-                  New here? <router-link to="/register">Create a patient account</router-link> to get started.
+                  Exiting User? <router-link to="/login">Login</router-link> to get started.
                 </p>
               </div>
             </div>
@@ -315,27 +307,6 @@
                 <strong>Email:</strong> support@citycarehospital.com
               </p>
             </div>
-            <div class="col-md-5">
-              <div class="card shadow-sm border-0">
-                <div class="card-body">
-                  <h5 class="card-title mb-3">Access your account</h5>
-                  <div class="d-grid gap-2">
-                    <router-link class="btn btn-primary" to="/login">
-                      Patient Login
-                    </router-link>
-                    <router-link class="btn btn-outline-primary" to="/login">
-                      Doctor Login
-                    </router-link>
-                    <router-link class="btn btn-outline-secondary" to="/login">
-                      Admin Login
-                    </router-link>
-                  </div>
-                  <p class="small text-muted mt-3 mb-0">
-                    New patient? <router-link to="/register">Create an account</router-link> in a few simple steps.
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -346,9 +317,6 @@
       <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center">
         <span class="small text-muted">
           © {{ new Date().getFullYear() }} CityCare Hospital. All rights reserved.
-        </span>
-        <span class="small text-muted">
-          For demonstration purposes only.
         </span>
       </div>
     </footer>

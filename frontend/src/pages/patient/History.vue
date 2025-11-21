@@ -2,120 +2,164 @@
   <div>
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2>Treatment History</h2>
-      <button class="btn btn-success" @click="exportCSV">Export as CSV</button>
+      <button 
+        class="btn btn-success" 
+        @click="exportCSV" 
+        :disabled="history.length === 0"
+      >
+        <i class="bi bi-file-earmark-spreadsheet me-2"></i> Export as CSV
+      </button>
     </div>
     
-    <div v-if="loading" class="text-center">
-      <div class="spinner-border" role="status"></div>
+    <!-- Loading State -->
+    <div v-if="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="mt-2 text-muted">Loading records...</p>
+    </div>
+
+    <!-- Error Alert -->
+    <div v-if="error" class="alert alert-danger alert-dismissible fade show" role="alert">
+      {{ error }}
+      <button type="button" class="btn-close" @click="error = ''"></button>
     </div>
     
     <div v-else>
-      <table class="table table-striped">
-        <thead>
-          <tr>
-            <th>Visit No.</th>
-            <th>Date</th>
-            <th>Doctor</th>
-            <th>Department</th>
-            <th>Visit Type</th>
-            <th>Tests Done</th>
-            <th>Diagnosis</th>
-            <th>Prescription</th>
-            <th>Medicines</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(record, idx) in history" :key="record.id">
-            <td>{{ idx + 1 }}</td>
-            <td>{{ formatDate(record.scheduled_date) }}</td>
-            <td>{{ record.doctor_name }}</td>
-            <td>{{ record.department }}</td>
-            <td>{{ record.treatment?.visit_type || 'N/A' }}</td>
-            <td>{{ record.treatment?.tests_done || 'N/A' }}</td>
-            <td>{{ record.treatment?.diagnosis || 'N/A' }}</td>
-            <td>{{ record.treatment?.prescription || 'N/A' }}</td>
-            <td>{{ record.treatment?.medicines || 'N/A' }}</td>
-          </tr>
-        </tbody>
-      </table>
-      
-      <div v-if="history.length === 0" class="text-center text-muted">
-        <p>No treatment history available</p>
+      <div class="table-responsive shadow-sm rounded">
+        <table class="table table-hover align-middle mb-0 bg-white">
+          <thead class="table-light">
+            <tr>
+              <th>Date</th>
+              <th>Doctor</th>
+              <th>Diagnosis</th>
+              <th>Prescription</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="history.length === 0">
+              <td colspan="5" class="text-center py-4 text-muted">No treatment history found.</td>
+            </tr>
+            <tr v-for="record in history" :key="record.appointment_id">
+              <td>
+                <div class="fw-bold">{{ formatDate(record.date) }}</div>
+                <div class="small text-muted">{{ record.time }}</div>
+              </td>
+              <td>
+                <div class="fw-bold">{{ record.doctor_name }}</div>
+                <div class="small text-muted">{{ record.doctor_specialization }}</div>
+              </td>
+              <td>{{ record.diagnosis || '-' }}</td>
+              <td>{{ record.prescription || '-' }}</td>
+              <td>
+                <small class="text-muted">{{ record.notes || '-' }}</small>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { patientAPI } from '@/services/api'
-
 export default {
   name: 'PatientHistory',
   data() {
     return {
       history: [],
       loading: true,
-      exportTaskId: null,
-      checkingExport: false
+      error: ''
     }
   },
   mounted() {
     this.loadHistory()
   },
   methods: {
+    // --- FETCH HISTORY ---
     async loadHistory() {
+      this.loading = true;
+      this.error = '';
       try {
-        this.history = await patientAPI.getHistory()
-      } catch (error) {
-        alert('Failed to load history: ' + error.message)
-      } finally {
-        this.loading = false
-      }
-    },
-    async exportCSV() {
-      try {
-        const response = await patientAPI.triggerCSVExport()
-        this.exportTaskId = response.task_id
-        
-        // Poll for completion
-        this.checkExportStatus()
-      } catch (error) {
-        alert('Failed to start CSV export: ' + error.message)
-      }
-    },
-    async checkExportStatus() {
-      if (!this.exportTaskId) return
-      
-      this.checkingExport = true
-      const maxAttempts = 10
-      let attempts = 0
-      
-      const poll = setInterval(async () => {
-        attempts++
-        try {
-          const response = await patientAPI.getCSVExportStatus(this.exportTaskId)
-          
-          if (response.state === 'SUCCESS') {
-            clearInterval(poll)
-            this.checkingExport = false
-            // The response should be a file download
-            alert('CSV export completed! File should download automatically.')
-          } else if (response.state === 'FAILURE' || attempts >= maxAttempts) {
-            clearInterval(poll)
-            this.checkingExport = false
-            alert('CSV export failed or timed out')
+        const response = await fetch('/api/patient/treatment-history', {
+          method: 'GET',
+          headers: {
+            "Content-Type": "application/json",
+            "Auth-Token": localStorage.getItem("auth_token")
+          },
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            this.$router.push('/login');
+            throw new Error("Session expired");
           }
-        } catch (error) {
-          clearInterval(poll)
-          this.checkingExport = false
-          alert('Failed to check export status: ' + error.message)
+          throw new Error(`Server error: ${response.status}`);
         }
-      }, 2000)
+
+        this.history = await response.json();
+        
+      } catch (err) {
+        console.error(err);
+        this.error = err.message || "Failed to load history";
+      } finally {
+        this.loading = false;
+      }
     },
+
+    // --- CLIENT-SIDE CSV EXPORT ---
+    exportCSV() {
+      if (this.history.length === 0) return;
+
+      try {
+        // 1. Define CSV Headers
+        const headers = ['Date', 'Time', 'Doctor Name', 'Specialization', 'Diagnosis', 'Prescription', 'Notes'];
+        
+        // 2. Map Data to CSV Rows
+        const rows = this.history.map(record => [
+          record.date,
+          record.time,
+          `"${record.doctor_name}"`, // Quote strings to handle commas
+          record.doctor_specialization,
+          `"${record.diagnosis || ''}"`,
+          `"${record.prescription || ''}"`,
+          `"${record.notes || ''}"`
+        ]);
+
+        // 3. Combine into CSV String
+        const csvContent = [
+          headers.join(','),
+          ...rows.map(row => row.join(','))
+        ].join('\n');
+
+        // 4. Create Download Link
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `treatment_history_${new Date().toISOString().slice(0,10)}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+      } catch (err) {
+        alert("Failed to export CSV: " + err.message);
+      }
+    },
+
     formatDate(dateStr) {
-      return new Date(dateStr).toLocaleDateString()
+      if (!dateStr) return '-';
+      return new Date(dateStr).toLocaleDateString(undefined, {
+        year: 'numeric', month: 'short', day: 'numeric'
+      });
     }
   }
 }
 </script>
 
+<style scoped>
+/* Optional: Highlight row on hover */
+tr:hover {
+  background-color: #f8f9fa;
+}
+</style>
