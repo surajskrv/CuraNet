@@ -2,7 +2,7 @@
   <div>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
       <div class="container-fluid">
-        <a class="navbar-brand" href="#">Hospital Management System</a>
+        <a class="navbar-brand" href="#">CuraNet</a>
         <button class="navbar-toggler" type="button" @click="toggleNavbar">
           <span class="navbar-toggler-icon"></span>
         </button>
@@ -52,7 +52,6 @@ export default {
       this.navbarOpen = !this.navbarOpen
     },
     async handleLogout() {
-      // 1. Clear ALL data saved during login
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user_id');
       localStorage.removeItem('user_role');
@@ -63,7 +62,6 @@ export default {
         console.warn("Backend logout failed, but frontend is cleared.");
       }
 
-      // 3. Redirect to Login
       this.$router.push('/login');
     }
   }

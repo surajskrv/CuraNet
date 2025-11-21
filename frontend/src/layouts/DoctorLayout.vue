@@ -2,7 +2,7 @@
   <div>
     <nav class="navbar navbar-expand-lg navbar-dark bg-success">
       <div class="container-fluid">
-        <a class="navbar-brand" href="#">Hospital Management System</a>
+        <a class="navbar-brand" href="#">CuraNet</a>
         <div class="navbar-nav ms-auto">
           <span class="navbar-text me-3">Welcome, Dr. {{ userData?.first_name || '' }}</span>
           <button class="btn btn-outline-light btn-sm" @click="handleLogout">Logout</button>

@@ -2,17 +2,17 @@ const API_BASE_URL = 'http://localhost:5000/api'
 
 // Helper function to get auth token
 function getAuthToken() {
-  return localStorage.getItem('token')
+  return localStorage.getItem('auth_token')
 }
 
 // Helper function to set auth token
 function setAuthToken(token) {
-  localStorage.setItem('token', token)
+  localStorage.setItem('auth_token', token)
 }
 
 // Helper function to remove auth token
 function removeAuthToken() {
-  localStorage.removeItem('token')
+  localStorage.removeItem('auth_token')
   localStorage.removeItem('user')
 }
 
@@ -51,82 +51,81 @@ async function apiRequest(endpoint, options = {}) {
   }
 }
 
-// Auth API
-export const authAPI = {
-  login: (username, password) => 
-    apiRequest('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ username, password })
-    }),
-  
-  register: (userData) =>
-    apiRequest('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(userData)
-    }),
-  
-  getCurrentUser: () =>
-    apiRequest('/auth/me')
-}
-
-// Admin API
 export const adminAPI = {
-  getDashboard: () =>
-    apiRequest('/admin/dashboard'),
-  
-  getDoctors: (search = '') =>
-    apiRequest(`/admin/doctors?search=${encodeURIComponent(search)}`),
-  
-  getDoctor: (id) =>
-    apiRequest(`/admin/doctors/${id}`),
-  
+  getDashboard: () => 
+    fetch('/api/admin/dashboard'),
+
+  // Logic: If search exists, hit the search endpoint; otherwise get all
+  getDoctors: (search = '') => {
+    if (search) {
+      return apiRequest(`/api/admin/search?type=doctor&q=${encodeURIComponent(search)}`);
+    }
+    return apiRequest('/api/admin/doctors');
+  },
+
+  getDoctor: (id) => 
+    apiRequest(`/api/admin/doctors/${id}`),
+
   createDoctor: (doctorData) =>
-    apiRequest('/admin/doctors', {
+    apiRequest('/api/admin/doctors', {
       method: 'POST',
       body: JSON.stringify(doctorData)
     }),
-  
+
   updateDoctor: (id, doctorData) =>
-    apiRequest(`/admin/doctors/${id}`, {
+    apiRequest(`/api/admin/doctors/${id}`, {
       method: 'PUT',
       body: JSON.stringify(doctorData)
     }),
-  
+
   deleteDoctor: (id) =>
-    apiRequest(`/admin/doctors/${id}`, {
+    apiRequest(`/api/admin/doctors/${id}`, {
       method: 'DELETE'
     }),
-  
-  getPatients: (search = '') =>
-    apiRequest(`/admin/patients?search=${encodeURIComponent(search)}`),
-  
-  getPatient: (id) =>
-    apiRequest(`/admin/patients/${id}`),
-  
+
+  // Logic: If search exists, hit the search endpoint; otherwise get all
+  getPatients: (search = '') => {
+    if (search) {
+      return apiRequest(`/api/admin/search?type=patient&q=${encodeURIComponent(search)}`);
+    }
+    return apiRequest('/api/admin/patients');
+  },
+
+  getPatient: (id) => 
+    apiRequest(`/api/admin/patients/${id}`), 
+
   updatePatient: (id, patientData) =>
-    apiRequest(`/admin/patients/${id}`, {
+    apiRequest(`/api/admin/patients/${id}`, {
       method: 'PUT',
       body: JSON.stringify(patientData)
     }),
-  
+
   deletePatient: (id) =>
-    apiRequest(`/admin/patients/${id}`, {
+    apiRequest(`/api/admin/patients/${id}`, {
       method: 'DELETE'
     }),
-  
+
   getAppointments: (status = '', upcoming = false) => {
-    const params = new URLSearchParams()
-    if (status) params.append('status', status)
-    if (upcoming) params.append('upcoming', 'true')
-    return apiRequest(`/admin/appointments?${params.toString()}`)
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    if (upcoming) params.append('upcoming', 'true');
+    return apiRequest(`/api/admin/appointments?${params.toString()}`);
   },
-  
-  getPatientHistory: (appointmentId) =>
-    apiRequest(`/admin/appointments/${appointmentId}/history`),
-  
-  getDeaprtment: () =>
-    apiRequest('/admin/deaprtment')
-}
+
+  // Fixed: Argument should be patientId, and URL matches backend route
+  getPatientHistory: (patientId) =>
+    apiRequest(`/api/admin/patient-history/${patientId}`),
+
+  // Fixed: Typo in name and URL
+  getDepartments: () => 
+    apiRequest('/api/admin/departments'),
+    
+  createDepartment: (data) =>
+    apiRequest('/api/admin/departments', {
+        method: 'POST',
+        body: JSON.stringify(data)
+    })
+};
 
 // Doctor API
 export const doctorAPI = {

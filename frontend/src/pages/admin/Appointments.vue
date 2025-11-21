@@ -2,93 +2,140 @@
   <div>
     <h2 class="mb-4">All Appointments</h2>
     
-    <div class="mb-3">
-      <select class="form-select d-inline-block" style="width: auto;" v-model="filterStatus" @change="loadAppointments">
+    <!-- Filters -->
+    <div class="mb-3 d-flex align-items-center gap-2">
+      <select class="form-select w-auto shadow-sm" v-model="filterStatus">
         <option value="">All Status</option>
         <option value="Booked">Booked</option>
         <option value="Completed">Completed</option>
         <option value="Cancelled">Cancelled</option>
       </select>
-      <button class="btn btn-sm btn-primary ms-2" @click="showUpcoming = !showUpcoming; loadAppointments()">
-        {{ showUpcoming ? 'Show All' : 'Show Upcoming Only' }}
+      
+      <div class="form-check form-switch ms-3">
+        <input class="form-check-input" type="checkbox" id="upcomingSwitch" v-model="showUpcoming">
+        <label class="form-check-label" for="upcomingSwitch">Show Upcoming Only</label>
+      </div>
+
+      <button class="btn btn-outline-secondary btn-sm ms-auto" @click="loadAppointments">
+        <i class="bi bi-arrow-clockwise"></i> Refresh
       </button>
     </div>
     
-    <div v-if="loading" class="text-center">
-      <div class="spinner-border" role="status"></div>
+    <!-- Loading State -->
+    <div v-if="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="mt-2 text-muted">Loading appointments...</p>
+    </div>
+
+    <!-- Error Alert -->
+    <div v-if="error" class="alert alert-danger alert-dismissible fade show" role="alert">
+      {{ error }}
+      <button type="button" class="btn-close" @click="error = ''"></button>
     </div>
     
+    <!-- Appointments Table -->
     <div v-else>
-      <table class="table table-striped">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Patient Name</th>
-            <th>Doctor Name</th>
-            <th>Department</th>
-            <th>Date</th>
-            <th>Time</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="appt in appointments" :key="appt.id">
-            <td>{{ appt.id }}</td>
-            <td>{{ appt.patient_name }}</td>
-            <td>{{ appt.doctor_name }}</td>
-            <td>{{ appt.department || 'N/A' }}</td>
-            <td>{{ formatDate(appt.scheduled_date) }}</td>
-            <td>{{ appt.scheduled_time }}</td>
-            <td>
-              <span :class="getStatusBadgeClass(appt.status)">
-                {{ appt.status }}
-              </span>
-            </td>
-            <td>
-              <button class="btn btn-sm btn-info" @click="viewHistory(appt)">View History</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-responsive shadow-sm rounded">
+        <table class="table table-hover align-middle mb-0 bg-white">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Patient</th>
+              <th>Doctor</th>
+              <th>Date & Time</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="filteredAppointments.length === 0">
+              <td colspan="6" class="text-center py-4 text-muted">No appointments found matching your filters.</td>
+            </tr>
+            <tr v-for="appt in filteredAppointments" :key="appt.id">
+              <td>#{{ appt.id }}</td>
+              <td>
+                <div class="fw-bold">{{ appt.patient_name }}</div>
+                <div class="small text-muted">{{ appt.patient_email }}</div>
+              </td>
+              <td>
+                <div class="fw-bold">{{ appt.doctor_name }}</div>
+                <div class="small text-muted">{{ appt.doctor_specialization }}</div>
+              </td>
+              <td>
+                <div>{{ formatDate(appt.date) }}</div>
+                <div class="small text-muted">{{ appt.time }}</div>
+              </td>
+              <td>
+                <span :class="getStatusBadgeClass(appt.status)">
+                  {{ appt.status }}
+                </span>
+              </td>
+              <td>
+                <button class="btn btn-sm btn-info text-white" @click="viewHistory(appt)">
+                  <i class="bi bi-clock-history me-1"></i> History
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
     
     <!-- History Modal -->
-    <div class="modal" :class="{ show: showHistoryModal }" :style="{ display: showHistoryModal ? 'block' : 'none' }" v-if="showHistoryModal" @click.self="showHistoryModal = false">
-      <div class="modal-dialog modal-lg" @click.stop>
+    <div v-if="showHistoryModal" class="modal-backdrop fade show"></div>
+    <div class="modal fade" :class="{ 'show d-block': showHistoryModal }" tabindex="-1" role="dialog">
+      <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Patient History</h5>
-            <button type="button" class="btn-close" @click="showHistoryModal = false"></button>
+            <h5 class="modal-title">
+              Medical History: <span class="text-primary">{{ selectedPatientName }}</span>
+            </h5>
+            <button type="button" class="btn-close" @click="closeModal"></button>
           </div>
           <div class="modal-body">
-            <div v-if="historyLoading">Loading...</div>
-            <div v-else>
-              <table class="table">
-                <thead>
+            <div v-if="historyLoading" class="text-center py-4">
+              <div class="spinner-border text-primary" role="status"></div>
+            </div>
+            
+            <div v-else-if="patientHistory.length === 0" class="text-center py-4 text-muted">
+              No medical history found for this patient.
+            </div>
+
+            <div v-else class="table-responsive">
+              <table class="table table-bordered table-sm">
+                <thead class="table-light">
                   <tr>
-                    <th>Visit No.</th>
                     <th>Date</th>
-                    <th>Visit Type</th>
-                    <th>Tests Done</th>
+                    <th>Doctor</th>
+                    <th>Reason</th>
                     <th>Diagnosis</th>
                     <th>Prescription</th>
-                    <th>Medicines</th>
+                    <th>Notes</th>
+                    <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="(h, idx) in patientHistory" :key="h.id">
-                    <td>{{ idx + 1 }}</td>
-                    <td>{{ formatDate(h.scheduled_date) }}</td>
-                    <td>{{ h.treatment?.visit_type || 'N/A' }}</td>
-                    <td>{{ h.treatment?.tests_done || 'N/A' }}</td>
-                    <td>{{ h.treatment?.diagnosis || 'N/A' }}</td>
-                    <td>{{ h.treatment?.prescription || 'N/A' }}</td>
-                    <td>{{ h.treatment?.medicines || 'N/A' }}</td>
+                  <tr v-for="h in patientHistory" :key="h.appointment_id">
+                    <td>{{ formatDate(h.date) }} <br><small>{{ h.time }}</small></td>
+                    <td>
+                      {{ h.doctor_name }}<br>
+                      <small class="text-muted">{{ h.doctor_specialization }}</small>
+                    </td>
+                    <td>{{ h.reason || '-' }}</td>
+                    <!-- Accessing flat keys from backend history list -->
+                    <td>{{ h.diagnosis || '-' }}</td>
+                    <td>{{ h.prescription || '-' }}</td>
+                    <td>{{ h.notes || '-' }}</td>
+                    <td>
+                      <span :class="getStatusBadgeClass(h.status)">{{ h.status }}</span>
+                    </td>
                   </tr>
                 </tbody>
               </table>
             </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="closeModal">Close</button>
           </div>
         </div>
       </div>
@@ -97,80 +144,144 @@
 </template>
 
 <script>
-import { adminAPI } from '@/services/api'
-
 export default {
   name: 'AdminAppointments',
   data() {
     return {
       appointments: [],
       loading: false,
+      error: '',
+      
+      // Filters
       filterStatus: '',
       showUpcoming: false,
+      
+      // Modal State
       showHistoryModal: false,
+      historyLoading: false,
       patientHistory: [],
-      historyLoading: false
+      selectedPatientName: ''
+    }
+  },
+  computed: {
+    // We filter client-side because backend only supports basic date equality
+    filteredAppointments() {
+      let filtered = this.appointments;
+
+      // 1. Status Filter
+      if (this.filterStatus) {
+        filtered = filtered.filter(a => a.status === this.filterStatus);
+      }
+
+      // 2. Upcoming Filter (Client side logic)
+      if (this.showUpcoming) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Reset time to compare dates only
+        
+        filtered = filtered.filter(a => {
+          const apptDate = new Date(a.date);
+          return apptDate >= today;
+        });
+      }
+
+      return filtered;
     }
   },
   mounted() {
-    this.loadAppointments()
+    this.loadAppointments();
   },
   methods: {
+    // --- LOAD APPOINTMENTS ---
     async loadAppointments() {
-      this.loading = true
+      this.loading = true;
+      this.error = '';
       try {
-        this.appointments = await adminAPI.getAppointments(
-          this.filterStatus,
-          this.showUpcoming
-        )
-      } catch (error) {
-        alert('Failed to load appointments: ' + error.message)
+        // Build URL parameters
+        const params = new URLSearchParams();
+        if (this.filterStatus) params.append('status', this.filterStatus);
+        
+        const response = await fetch(`/api/admin/appointments?${params.toString()}`, {
+          method: 'GET',
+          headers: {
+            "Content-Type": "application/json",
+            "Auth-Token": localStorage.getItem("auth_token")
+          },
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            this.$router.push('/login');
+            throw new Error("Session expired");
+          }
+          throw new Error(`Server error (${response.status})`);
+        }
+        
+        this.appointments = await response.json();
+      } catch (err) {
+        console.error(err);
+        this.error = err.message || 'Error loading appointments';
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
+
+    // --- VIEW HISTORY ---
     async viewHistory(appointment) {
-      this.showHistoryModal = true
-      this.historyLoading = true
+      this.selectedPatientName = appointment.patient_name;
+      this.showHistoryModal = true;
+      this.historyLoading = true;
+      this.patientHistory = [];
+      
       try {
-        this.patientHistory = await adminAPI.getPatientHistory(appointment.id)
-      } catch (error) {
-        alert('Failed to load history: ' + error.message)
+        const response = await fetch(`/api/admin/patient-history/${appointment.patient_id}`, {
+          method: 'GET',
+          headers: {
+            "Content-Type": "application/json",
+            "Auth-Token": localStorage.getItem("auth_token")
+          },
+        });
+
+        if (!response.ok) throw new Error("Failed to fetch history");
+
+        const data = await response.json();
+        // Backend returns object { patient: {...}, history: [...] }
+        this.patientHistory = data.history || [];
+        
+      } catch (err) {
+        alert('Failed to load history: ' + err.message);
       } finally {
-        this.historyLoading = false
+        this.historyLoading = false;
       }
     },
-    formatDate(dateStr) {
-      if (!dateStr) return 'N/A'
-      return new Date(dateStr).toLocaleDateString()
+
+    closeModal() {
+      this.showHistoryModal = false;
+      this.patientHistory = [];
     },
+
+    // --- HELPERS ---
+    formatDate(dateStr) {
+      if (!dateStr) return 'N/A';
+      return new Date(dateStr).toLocaleDateString(undefined, {
+        year: 'numeric', month: 'short', day: 'numeric'
+      });
+    },
+    
     getStatusBadgeClass(status) {
       const classes = {
         'Booked': 'badge bg-primary',
         'Completed': 'badge bg-success',
         'Cancelled': 'badge bg-danger'
-      }
-      return classes[status] || 'badge bg-secondary'
+      };
+      return classes[status] || 'badge bg-secondary';
     }
   }
 }
 </script>
 
 <style scoped>
-.modal.show {
-  display: block !important;
-  background-color: rgba(0, 0, 0, 0.5);
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1050;
-}
-.modal-dialog {
-  margin: 1.75rem auto;
-  position: relative;
-  z-index: 1051;
+.modal-backdrop {
+  opacity: 0.5;
+  background-color: #000;
 }
 </style>
-

@@ -2,7 +2,7 @@
   <div>
     <nav class="navbar navbar-expand-lg navbar-dark bg-info">
       <div class="container-fluid">
-        <a class="navbar-brand" href="#">Hospital Management System</a>
+        <a class="navbar-brand" href="#">CuraNet</a>
         <button class="navbar-toggler" type="button" @click="toggleNavbar">
           <span class="navbar-toggler-icon"></span>
         </button>

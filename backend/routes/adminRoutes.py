@@ -445,3 +445,25 @@ def admin_patient_history(patient_id):
     except Exception as e:
         return jsonify({"message": "Error fetching patient history", "error": str(e)}), 500
 
+@app.route('/api/admin/patients/<int:patient_id>', methods=['GET'])
+@auth_required('token')
+@roles_accepted('admin')
+def get_single_patient(patient_id):
+    try:
+        patient = Patient.query.get_or_404(patient_id)
+        return jsonify({
+            'id': patient.id,
+            'user_id': patient.user_id,
+            'name': patient.user.name,
+            'email': patient.user.email,
+            'phone': patient.user.phone,
+            'address': patient.user.address,
+            'pincode': patient.user.pincode,
+            'date_of_birth': patient.date_of_birth.strftime('%Y-%m-%d') if patient.date_of_birth else None,
+            'gender': patient.gender,
+            'blood_group': patient.blood_group,
+            'medical_history': patient.medical_history,
+            'emergency_contact': patient.emergency_contact
+        }), 200
+    except Exception as e:
+        return jsonify({"message": "Error fetching patient", "error": str(e)}), 500

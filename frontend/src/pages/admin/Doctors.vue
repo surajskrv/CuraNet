@@ -2,118 +2,173 @@
   <div>
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2>Manage Doctors</h2>
-      <button class="btn btn-primary" @click="showCreateModal = true">Add New Doctor</button>
+      <button class="btn btn-primary" @click="openCreateModal">
+        <i class="bi bi-plus-lg me-1"></i> Add New Doctor
+      </button>
     </div>
     
+    <!-- Search Bar -->
     <div class="mb-3">
-      <input
-        type="text"
-        class="form-control"
-        placeholder="Search doctors by name, username, or department..."
-        v-model="searchQuery"
-        @input="searchDoctors"
-      />
+      <div class="input-group shadow-sm">
+        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+        <input
+          type="text"
+          class="form-control border-start-0 ps-0"
+          placeholder="Search by name or specialization..."
+          v-model="searchQuery"
+          @input="searchDoctors"
+        />
+      </div>
     </div>
     
-    <div v-if="loading" class="text-center">
-      <div class="spinner-border" role="status"></div>
+    <!-- Loading State -->
+    <div v-if="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="mt-2 text-muted">Loading doctors...</p>
+    </div>
+
+    <!-- Error Alert -->
+    <div v-if="error" class="alert alert-danger alert-dismissible fade show" role="alert">
+      {{ error }}
+      <button type="button" class="btn-close" @click="error = ''"></button>
     </div>
     
+    <!-- Doctors Table -->
     <div v-else>
-      <table class="table table-striped">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Username</th>
-            <th>Email</th>
-            <th>Department</th>
-            <th>Experience</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="doctor in doctors" :key="doctor.id">
-            <td>{{ doctor.id }}</td>
-            <td>{{ doctor.full_name }}</td>
-            <td>{{ doctor.username }}</td>
-            <td>{{ doctor.email }}</td>
-            <td>{{ doctor.department || 'N/A' }}</td>
-            <td>{{ doctor.experience_years || 0 }} years</td>
-            <td>
-              <span :class="doctor.is_active ? 'badge bg-success' : 'badge bg-danger'">
-                {{ doctor.is_active ? 'Active' : 'Blacklisted' }}
-              </span>
-            </td>
-            <td>
-              <button class="btn btn-sm btn-warning me-1" @click="editDoctor(doctor)">Edit</button>
-              <button class="btn btn-sm btn-danger" @click="deleteDoctor(doctor.id)">Blacklist</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-responsive shadow-sm rounded">
+        <table class="table table-hover align-middle mb-0 bg-white">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Specialization</th>
+              <th>Department</th>
+              <th>Contact</th>
+              <th>Exp</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="doctors.length === 0">
+              <td colspan="7" class="text-center py-4 text-muted">No doctors found.</td>
+            </tr>
+            <tr v-for="doctor in doctors" :key="doctor.id">
+              <td>#{{ doctor.id }}</td>
+              <td class="fw-bold">{{ doctor.name }}</td>
+              <td>{{ doctor.specialization }}</td>
+              <td>
+                <span class="badge bg-soft-primary text-primary border border-primary-subtle">
+                  {{ doctor.department_name || 'Unassigned' }}
+                </span>
+              </td>
+              <td>
+                <div class="small">{{ doctor.email }}</div>
+                <div class="small text-muted">{{ doctor.phone }}</div>
+              </td>
+              <td>{{ doctor.experience || 0 }} yrs</td>
+              <td>
+                <button class="btn btn-sm btn-outline-primary me-1" @click="editDoctor(doctor)" title="Edit">
+                  <i class="bi bi-pencil-fill"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" @click="deleteDoctor(doctor.id)" title="Blacklist/Delete">
+                  <i class="bi bi-trash-fill"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
     
     <!-- Create/Edit Modal -->
-    <div class="modal" :class="{ show: showCreateModal || showEditModal }" :style="{ display: (showCreateModal || showEditModal) ? 'block' : 'none' }" v-if="showCreateModal || showEditModal" @click.self="closeModal">
-      <div class="modal-dialog" @click.stop>
+    <div v-if="showModal" class="modal-backdrop fade show"></div>
+    <div class="modal fade" :class="{ 'show d-block': showModal }" tabindex="-1" role="dialog">
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">{{ showEditModal ? 'Edit Doctor' : 'Add New Doctor' }}</h5>
+            <h5 class="modal-title">{{ isEditing ? 'Edit Doctor' : 'Add New Doctor' }}</h5>
             <button type="button" class="btn-close" @click="closeModal"></button>
           </div>
           <div class="modal-body">
             <form @submit.prevent="saveDoctor">
-              <div class="mb-3">
-                <label class="form-label">Username *</label>
-                <input type="text" class="form-control" v-model="doctorForm.username" required />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Email *</label>
-                <input type="email" class="form-control" v-model="doctorForm.email" required />
-              </div>
-              <div v-if="!showEditModal" class="mb-3">
-                <label class="form-label">Password *</label>
-                <input type="password" class="form-control" v-model="doctorForm.password" required />
-              </div>
+              
+              <!-- Account Info -->
+              <h6 class="mb-3 text-primary border-bottom pb-2">Account Information</h6>
               <div class="row">
                 <div class="col-md-6 mb-3">
-                  <label class="form-label">First Name *</label>
-                  <input type="text" class="form-control" v-model="doctorForm.first_name" required />
+                  <label class="form-label">Full Name *</label>
+                  <input type="text" class="form-control" v-model="doctorForm.name" required placeholder="Dr. John Doe" />
                 </div>
                 <div class="col-md-6 mb-3">
-                  <label class="form-label">Last Name *</label>
-                  <input type="text" class="form-control" v-model="doctorForm.last_name" required />
+                  <label class="form-label">Email *</label>
+                  <input type="email" class="form-control" v-model="doctorForm.email" required placeholder="doctor@hospital.com" />
                 </div>
               </div>
-              <div class="mb-3">
-                <label class="form-label">Department *</label>
-                <select class="form-select" v-model="doctorForm.department_id" required>
-                  <option value="">Select Department</option>
-                  <option v-for="spec in deaprtment" :key="spec.id" :value="spec.id">
-                    {{ spec.name }}
-                  </option>
-                </select>
+
+              <!-- Password only shown for new users -->
+              <div v-if="!isEditing" class="mb-3">
+                <label class="form-label">Password *</label>
+                <input type="password" class="form-control" v-model="doctorForm.password" required minlength="6" />
+                <div class="form-text">Must be at least 6 characters.</div>
               </div>
-              <div class="mb-3">
-                <label class="form-label">Experience (Years)</label>
-                <input type="number" class="form-control" v-model.number="doctorForm.experience_years" />
+
+              <div class="row">
+                 <div class="col-md-6 mb-3">
+                  <label class="form-label">Phone Number</label>
+                  <input type="tel" class="form-control" v-model="doctorForm.phone" placeholder="10-digit number" />
+                </div>
+                <div class="col-md-6 mb-3">
+                   <label class="form-label">Pincode</label>
+                   <input type="text" class="form-control" v-model="doctorForm.pincode" />
+                </div>
               </div>
+
               <div class="mb-3">
-                <label class="form-label">Qualifications</label>
-                <textarea class="form-control" v-model="doctorForm.qualifications" rows="2"></textarea>
+                  <label class="form-label">Address</label>
+                  <textarea class="form-control" v-model="doctorForm.address" rows="2"></textarea>
               </div>
+
+              <!-- Professional Info -->
+              <h6 class="mb-3 text-primary border-bottom pb-2 mt-4">Professional Details</h6>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Department *</label>
+                  <select class="form-select" v-model="doctorForm.department_id" required>
+                    <option value="" disabled>Select Department</option>
+                    <option v-for="dept in departments" :key="dept.id" :value="dept.id">
+                      {{ dept.name }}
+                    </option>
+                  </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Specialization *</label>
+                  <input type="text" class="form-control" v-model="doctorForm.specialization" required placeholder="e.g. Cardiologist" />
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Experience (Years)</label>
+                  <input type="number" class="form-control" v-model="doctorForm.experience" />
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Qualification</label>
+                  <input type="text" class="form-control" v-model="doctorForm.qualification" placeholder="e.g. MBBS, MD" />
+                </div>
+              </div>
+
               <div class="mb-3">
                 <label class="form-label">Bio</label>
-                <textarea class="form-control" v-model="doctorForm.bio" rows="3"></textarea>
+                <textarea class="form-control" v-model="doctorForm.bio" rows="3" placeholder="Short biography..."></textarea>
               </div>
-              <div class="mb-3">
-                <label class="form-label">Contact Number</label>
-                <input type="tel" class="form-control" v-model="doctorForm.contact_number" />
+
+              <div class="modal-footer px-0 pb-0">
+                <button type="button" class="btn btn-secondary" @click="closeModal">Cancel</button>
+                <button type="submit" class="btn btn-primary" :disabled="submitting">
+                  <span v-if="submitting" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  {{ isEditing ? 'Update Doctor' : 'Create Doctor' }}
+                </button>
               </div>
-              <button type="submit" class="btn btn-primary">Save</button>
-              <button type="button" class="btn btn-secondary ms-2" @click="closeModal">Cancel</button>
             </form>
           </div>
         </div>
@@ -123,116 +178,194 @@
 </template>
 
 <script>
-import { adminAPI } from '@/services/api'
-
 export default {
   name: 'AdminDoctors',
   data() {
     return {
       doctors: [],
-      deaprtment: [],
+      departments: [],
       loading: false,
+      submitting: false,
+      error: '',
       searchQuery: '',
-      showCreateModal: false,
-      showEditModal: false,
+      searchTimeout: null,
+      showModal: false,
+      isEditing: false,
+      editingDoctorId: null,
+      
       doctorForm: {
-        username: '',
         email: '',
         password: '',
-        first_name: '',
-        last_name: '',
+        name: '',
+        phone: '',
+        address: '',
+        pincode: '',
         department_id: '',
-        experience_years: null,
-        qualifications: '',
-        bio: '',
-        contact_number: ''
+        specialization: '',
+        qualification: '',
+        experience: '',
+        bio: ''
       }
     }
   },
   mounted() {
-    this.loadDoctors()
-    this.loadDeaprtment()
+    this.loadDoctors();
+    this.loadDepartments();
   },
   methods: {
     async loadDoctors() {
-      this.loading = true
+      this.loading = true;
+      this.error = '';
       try {
-        this.doctors = await adminAPI.getDoctors(this.searchQuery)
-      } catch (error) {
-        alert('Failed to load doctors: ' + error.message)
+        let url = '/api/admin/doctors';
+        
+        if (this.searchQuery.trim()) {
+          url = `/api/admin/search?type=doctor&q=${encodeURIComponent(this.searchQuery)}`;
+        }
+
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            "Content-Type": "application/json",
+            "Auth-Token": localStorage.getItem("auth_token")
+          },
+        });
+
+        if (!response.ok) throw new Error(`Failed to fetch doctors (${response.status})`);
+        
+        this.doctors = await response.json();
+      } catch (err) {
+        console.error(err);
+        this.error = err.message || 'Error loading doctors';
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
-    async loadDeaprtment() {
+
+    async loadDepartments() {
       try {
-        this.deaprtment = await adminAPI.getDeaprtment()
-      } catch (error) {
-        console.error('Failed to load deaprtment:', error)
+        const response = await fetch('/api/admin/departments', {
+          method: 'GET',
+          headers: {
+            "Content-Type": "application/json",
+            "Auth-Token": localStorage.getItem("auth_token")
+          },
+        });
+        if (response.ok) {
+          this.departments = await response.json();
+        }
+      } catch (err) {
+        console.error("Failed to load departments", err);
       }
     },
+
+    // --- Search Debounce ---
     searchDoctors() {
-      clearTimeout(this.searchTimeout)
+      if (this.searchTimeout) clearTimeout(this.searchTimeout);
       this.searchTimeout = setTimeout(() => {
-        this.loadDoctors()
-      }, 300)
+        this.loadDoctors();
+      }, 500);
     },
+
+    // --- Modal Logic ---
+    openCreateModal() {
+      this.resetForm();
+      this.isEditing = false;
+      this.showModal = true;
+    },
+
     editDoctor(doctor) {
+      this.isEditing = true;
+      this.editingDoctorId = doctor.id;
+      this.showModal = true;
+      
+      // Match backend keys to form keys
       this.doctorForm = {
-        username: doctor.username,
         email: doctor.email,
-        first_name: doctor.first_name,
-        last_name: doctor.last_name,
-        department_id: doctor.department_id,
-        experience_years: doctor.experience_years,
-        qualifications: doctor.qualifications || '',
+        name: doctor.name, 
+        phone: doctor.phone || '',
+        address: doctor.address || '',
+        pincode: doctor.pincode || '',
+        department_id: doctor.department_id || '',
+        specialization: doctor.specialization,
+        qualification: doctor.qualification || '',
+        experience: doctor.experience || '',
         bio: doctor.bio || '',
-        contact_number: doctor.contact_number || ''
-      }
-      this.showEditModal = true
-      this.editingDoctorId = doctor.id
+        password: '' 
+      };
     },
-    async saveDoctor() {
-      try {
-        if (this.showEditModal) {
-          await adminAPI.updateDoctor(this.editingDoctorId, this.doctorForm)
-          alert('Doctor updated successfully!')
-        } else {
-          await adminAPI.createDoctor(this.doctorForm)
-          alert('Doctor created successfully!')
-        }
-        this.closeModal()
-        this.loadDoctors()
-      } catch (error) {
-        alert('Failed to save doctor: ' + error.message)
-      }
-    },
-    async deleteDoctor(id) {
-      if (confirm('Are you sure you want to blacklist this doctor?')) {
-        try {
-          await adminAPI.deleteDoctor(id)
-          alert('Doctor blacklisted successfully!')
-          this.loadDoctors()
-        } catch (error) {
-          alert('Failed to blacklist doctor: ' + error.message)
-        }
-      }
-    },
+
     closeModal() {
-      this.showCreateModal = false
-      this.showEditModal = false
-      this.editingDoctorId = null
+      this.showModal = false;
+      this.resetForm();
+    },
+
+    resetForm() {
       this.doctorForm = {
-        username: '',
-        email: '',
-        password: '',
-        first_name: '',
-        last_name: '',
-        department_id: '',
-        experience_years: null,
-        qualifications: '',
-        bio: '',
-        contact_number: ''
+        email: '', password: '', name: '', phone: '', address: '',
+        pincode: '', department_id: '', specialization: '',
+        qualification: '', experience: '', bio: ''
+      };
+      this.editingDoctorId = null;
+      this.submitting = false;
+    },
+
+    // --- CRUD Operations ---
+    async saveDoctor() {
+      this.submitting = true;
+      try {
+        const url = this.isEditing 
+          ? `/api/admin/doctors/${this.editingDoctorId}`
+          : '/api/admin/doctors';
+          
+        const method = this.isEditing ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+          method: method,
+          headers: {
+            "Content-Type": "application/json",
+            "Auth-Token": localStorage.getItem("auth_token")
+          },
+          body: JSON.stringify(this.doctorForm)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to save doctor');
+        }
+
+        alert(this.isEditing ? 'Doctor updated successfully!' : 'Doctor created successfully!');
+        this.closeModal();
+        this.loadDoctors();
+        
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        this.submitting = false;
+      }
+    },
+
+    async deleteDoctor(id) {
+      if (!confirm('Are you sure you want to blacklist/remove this doctor?')) return;
+      
+      try {
+        const response = await fetch(`/api/admin/doctors/${id}`, {
+          method: 'DELETE',
+          headers: {
+            "Content-Type": "application/json",
+            "Auth-Token": localStorage.getItem("auth_token")
+          },
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.message || 'Delete failed');
+        }
+
+        this.loadDoctors(); 
+      } catch (err) {
+        alert(err.message);
       }
     }
   }
@@ -240,20 +373,12 @@ export default {
 </script>
 
 <style scoped>
-.modal.show {
-  display: block !important;
-  background-color: rgba(0, 0, 0, 0.5);
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1050;
+.modal-backdrop {
+  opacity: 0.5;
+  background-color: #000;
 }
-.modal-dialog {
-  margin: 1.75rem auto;
-  position: relative;
-  z-index: 1051;
+.bg-soft-primary {
+    background-color: rgba(13, 110, 253, 0.1);
+    color: #0d6efd;
 }
 </style>
-
