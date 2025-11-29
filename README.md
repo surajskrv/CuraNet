@@ -62,6 +62,9 @@ CuraNet is a comprehensive web application designed to streamline hospital opera
 3.  Install dependencies:
     ```bash
     pip install -r backend/requirements.txt
+
+    # Linux
+    pip3 install -r backend/requirements.txt --break-system-packages
     ```
 4.  Run the application (this will automatically seed the database with default data):
     ```bash
