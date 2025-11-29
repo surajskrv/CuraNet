@@ -3,6 +3,7 @@ from flask_security import auth_required, roles_accepted, current_user
 from ..extensions import db
 from ..models import User, Doctor, Patient, Appointment, Treatment, DoctorAvailability
 from datetime import date, datetime, timedelta, time as dt_time
+from sqlalchemy import or_
 
 @app.route('/api/doctor/dashboard', methods=['GET'])
 @auth_required('token')
@@ -305,59 +306,64 @@ def manage_availability():
                 if date_str not in availability_dict:
                     availability_dict[date_str] = []
                 
-                # Check if slot is booked
+                # Check if slot is Booked OR Completed
+                # We use in_ to check multiple statuses
                 appointment = Appointment.query.filter(
                     Appointment.doctor_id == doctor.id,
                     Appointment.date == avail.date,
                     Appointment.time == avail.start_time,
-                    Appointment.status == 'Booked'
+                    Appointment.status.in_(['Booked', 'Completed'])
                 ).first()
                 
+                status = 'Available'
+                if appointment:
+                    status = appointment.status
+
                 availability_dict[date_str].append({
                     'id': avail.id,
                     'start_time': avail.start_time.strftime('%H:%M'),
                     'end_time': avail.end_time.strftime('%H:%M'),
                     'is_available': avail.is_available and not appointment,
-                    'is_booked': appointment is not None
+                    'is_booked': appointment is not None,
+                    'status': status
                 })
             
             return jsonify(availability_dict), 200
         
         elif request.method == 'POST':
             data = request.get_json()
-            availabilities = data.get('availabilities', [])  # Array of {date, start_time, end_time}
+            availabilities = data.get('availabilities', [])
             
-            # Delete existing availability for next 7 days
-            start_date = date.today() + timedelta(days=1)
-            end_date = start_date + timedelta(days=6)
+            # --- FIX: ROBUST DELETION ---
+            # To prevent Unique Constraint violations due to timezone mismatches between client/server,
+            # we widen the deletion window to cover Today + 14 days. 
+            # This ensures we clear any existing slots in the target range before re-inserting.
+            delete_start = date.today()
+            delete_end = delete_start + timedelta(days=14)
+            
             DoctorAvailability.query.filter(
                 DoctorAvailability.doctor_id == doctor.id,
-                DoctorAvailability.date >= start_date,
-                DoctorAvailability.date <= end_date
-            ).delete()
+                DoctorAvailability.date >= delete_start,
+                DoctorAvailability.date <= delete_end
+            ).delete(synchronize_session=False)
             
             # Add new availabilities
             for avail_data in availabilities:
-                avail_date = datetime.strptime(avail_data['date'], '%Y-%m-%d').date()
-                start_time = datetime.strptime(avail_data['start_time'], '%H:%M').time()
-                end_time = datetime.strptime(avail_data['end_time'], '%H:%M').time()
-                
-                # Check if there's an appointment at this time
-                appointment = Appointment.query.filter(
-                    Appointment.doctor_id == doctor.id,
-                    Appointment.date == avail_date,
-                    Appointment.time == start_time,
-                    Appointment.status == 'Booked'
-                ).first()
-                
-                availability = DoctorAvailability(
-                    doctor_id=doctor.id,
-                    date=avail_date,
-                    start_time=start_time,
-                    end_time=end_time,
-                    is_available=not appointment
-                )
-                db.session.add(availability)
+                try:
+                    avail_date = datetime.strptime(avail_data['date'], '%Y-%m-%d').date()
+                    start_time = datetime.strptime(avail_data['start_time'], '%H:%M').time()
+                    end_time = datetime.strptime(avail_data['end_time'], '%H:%M').time()
+                    
+                    availability = DoctorAvailability(
+                        doctor_id=doctor.id,
+                        date=avail_date,
+                        start_time=start_time,
+                        end_time=end_time,
+                        is_available=True 
+                    )
+                    db.session.add(availability)
+                except ValueError:
+                    continue # Skip malformed dates
             
             db.session.commit()
             
@@ -365,5 +371,6 @@ def manage_availability():
             
     except Exception as e:
         db.session.rollback()
+        # Log the specific error to help with debugging if it persists
+        print(f"Error in manage_availability: {str(e)}") 
         return jsonify({"message": "Error managing availability", "error": str(e)}), 500
-

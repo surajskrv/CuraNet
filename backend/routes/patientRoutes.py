@@ -117,12 +117,12 @@ def search_doctors():
             # Group by date
             availability_dict = {}
             for avail in availabilities:
-                # Check if slot is booked
+                # FIX: Check if slot is booked OR completed to prevent double booking or booking completed slots
                 appointment = Appointment.query.filter(
                     Appointment.doctor_id == doctor.id,
                     Appointment.date == avail.date,
                     Appointment.time == avail.start_time,
-                    Appointment.status == 'Booked'
+                    Appointment.status.in_(['Booked', 'Completed']) # Updated line
                 ).first()
                 
                 if not appointment:
@@ -221,18 +221,32 @@ def manage_appointments():
             if apt_date < date.today():
                 return jsonify({"message": "Cannot book appointment in the past"}), 400
             
-            # Check if slot is already booked
-            existing = Appointment.query.filter(
+            # FIX: Check for ANY existing appointment at this slot (Booked, Cancelled, or Completed)
+            existing_appointment = Appointment.query.filter(
                 Appointment.doctor_id == doctor_id,
                 Appointment.date == apt_date,
-                Appointment.time == apt_time,
-                Appointment.status == 'Booked'
+                Appointment.time == apt_time
             ).first()
             
-            if existing:
-                return jsonify({"message": "Time slot already booked"}), 409
-            
-            # Check if doctor has availability
+            if existing_appointment:
+                if existing_appointment.status == 'Booked':
+                    return jsonify({"message": "Time slot already booked"}), 409
+                elif existing_appointment.status == 'Completed':
+                    return jsonify({"message": "This slot is already completed"}), 409
+                elif existing_appointment.status == 'Cancelled':
+                    # Reactivate the cancelled appointment
+                    existing_appointment.status = 'Booked'
+                    existing_appointment.patient_id = patient.id
+                    existing_appointment.reason = reason
+                    existing_appointment.updated_at = datetime.utcnow()
+                    
+                    db.session.commit()
+                    return jsonify({
+                        "message": "Appointment booked successfully",
+                        "appointment_id": existing_appointment.id
+                    }), 201
+
+            # Check if doctor has availability (if no existing record was found/reused)
             availability = DoctorAvailability.query.filter(
                 DoctorAvailability.doctor_id == doctor_id,
                 DoctorAvailability.date == apt_date,
@@ -464,4 +478,3 @@ def patient_search():
         
     except Exception as e:
         return jsonify({"message": "Error in search", "error": str(e)}), 500
-

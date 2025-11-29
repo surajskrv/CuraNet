@@ -79,6 +79,9 @@
                         <button class="btn btn-sm btn-success me-1" @click="completeAppointment(appt)" title="Complete Treatment">
                           <i class="bi bi-check-lg"></i>
                         </button>
+                        <button class="btn btn-sm btn-outline-danger me-1" @click="cancelAppointment(appt.id)" title="Cancel Appointment">
+                          <i class="bi bi-x-circle"></i>
+                        </button>
                         <button class="btn btn-sm btn-info text-white" @click="viewPatientHistory(appt)" title="View History">
                           <i class="bi bi-clock-history"></i>
                         </button>
@@ -94,11 +97,10 @@
         <!-- Right Column: My Schedule & Quick Actions -->
         <div class="col-lg-4 mb-4">
           
-          <!-- NEW: My Availability Schedule -->
+          <!-- My Availability Schedule -->
           <div class="card shadow-sm mb-4">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
               <h5 class="mb-0">My Active Slots</h5>
-              <span class="badge bg-light text-dark border">Next 7 Days</span>
             </div>
             <div class="card-body p-0">
               <div class="list-group list-group-flush">
@@ -106,15 +108,16 @@
                   No availability set for the coming week.
                 </div>
                 <div v-for="(slots, date) in mySchedule" :key="date" class="list-group-item">
-                  <div class="d-flex justify-content-between align-items-center">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
                     <span class="fw-bold small">{{ formatDate(date) }}</span>
-                    <div class="text-end">
-                      <span v-for="slot in slots" :key="slot.start_time" 
-                            class="badge me-1" 
-                            :class="slot.is_booked ? 'bg-danger' : 'bg-success'">
-                        {{ slot.start_time }}
-                      </span>
-                    </div>
+                  </div>
+                  <div class="d-flex flex-wrap gap-1">
+                    <span v-for="slot in slots" :key="slot.start_time" 
+                          class="badge" 
+                          :class="getSlotClass(slot)"
+                          :title="slot.status || 'Available'">
+                      {{ slot.start_time }}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -127,7 +130,7 @@
               <h5 class="mb-0">Quick Actions</h5>
             </div>
             <div class="card-body">
-              <p class="text-muted small">Manage your working hours for the upcoming week.</p>
+              <p class="text-muted small">Manage your hourly slots for the upcoming week.</p>
               <button class="btn btn-outline-primary w-100 mb-3" @click="openAvailabilityModal">
                 <i class="bi bi-calendar-range me-2"></i> Set Availability
               </button>
@@ -152,12 +155,12 @@
                   <textarea class="form-control" v-model="treatmentForm.diagnosis" rows="2" required placeholder="Primary diagnosis..."></textarea>
                 </div>
                 <div class="mb-3">
-                  <label class="form-label">Prescription</label>
-                  <textarea class="form-control" v-model="treatmentForm.prescription" rows="3" placeholder="Rx..."></textarea>
+                  <label class="form-label">Prescription *</label>
+                  <textarea class="form-control" v-model="treatmentForm.prescription" rows="3" placeholder="Rx..." required></textarea>
                 </div>
                 <div class="mb-3">
-                  <label class="form-label">Additional Notes</label>
-                  <textarea class="form-control" v-model="treatmentForm.notes" rows="2" placeholder="Advice, follow-up notes..."></textarea>
+                  <label class="form-label">Additional Notes *</label>
+                  <textarea class="form-control" v-model="treatmentForm.notes" rows="2" placeholder="Advice, follow-up notes..." required></textarea>
                 </div>
                 <div class="d-flex justify-content-end gap-2">
                   <button type="button" class="btn btn-secondary" @click="closeCompleteModal">Cancel</button>
@@ -178,25 +181,50 @@
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title">Set Availability</h5>
+              <h5 class="modal-title">Set Availability (Hourly Slots)</h5>
               <button type="button" class="btn-close" @click="showAvailabilityModal = false"></button>
             </div>
             <div class="modal-body">
-              <p class="alert alert-info small">
-                <i class="bi bi-info-circle me-2"></i>
-                Checking a box marks you as <strong>available</strong> for that slot.
-              </p>
-              <div v-for="day in availabilityDays" :key="day.date" class="card mb-2 border-light bg-light">
+              <!-- Instruction Legend -->
+              <div class="alert alert-light border mb-3">
+                <small>
+                  <strong>Legend:</strong>
+                  <span class="badge bg-success mx-1">Selected</span>
+                  <span class="badge bg-light text-dark border mx-1">Unselected</span>
+                  <span class="badge bg-danger mx-1">Booked (Locked)</span>
+                  <span class="badge bg-secondary mx-1">Completed (Locked)</span>
+                  <div class="mt-2 text-muted fst-italic">
+                    <i class="bi bi-exclamation-circle me-1"></i>
+                    Slots for <strong>Today</strong> are read-only and cannot be modified.
+                  </div>
+                </small>
+              </div>
+
+              <div v-for="day in availabilityDays" :key="day.date" class="card mb-3 border-light bg-light">
+                <div class="card-header bg-white py-2 d-flex justify-content-between">
+                  <strong>{{ formatDate(day.date) }}</strong>
+                  <span v-if="day.isToday" class="badge bg-warning text-dark">Today (Read-Only)</span>
+                </div>
                 <div class="card-body py-2">
-                  <div class="d-flex justify-content-between align-items-center">
-                    <strong style="min-width: 120px;">{{ formatDate(day.date) }}</strong>
-                    <div class="form-check">
-                      <input class="form-check-input" type="checkbox" :id="'m-'+day.date" v-model="day.morning">
-                      <label class="form-check-label" :for="'m-'+day.date">Morning (08:00 - 12:00)</label>
-                    </div>
-                    <div class="form-check">
-                      <input class="form-check-input" type="checkbox" :id="'e-'+day.date" v-model="day.evening">
-                      <label class="form-check-label" :for="'e-'+day.date">Evening (16:00 - 21:00)</label>
+                  <div class="row g-2">
+                    <div class="col-6 col-md-3 col-lg-2" v-for="slot in day.slots" :key="slot.time">
+                      <div class="form-check w-100">
+                        <input 
+                          class="form-check-input" 
+                          type="checkbox" 
+                          :id="'slot-'+day.date+'-'+slot.time"
+                          v-model="slot.selected"
+                          :disabled="slot.disabled"
+                        >
+                        <label 
+                          class="form-check-label w-100 badge"
+                          :for="'slot-'+day.date+'-'+slot.time"
+                          :class="getModalSlotClass(slot)"
+                          style="cursor: pointer;"
+                        >
+                          {{ slot.time }}
+                        </label>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -272,7 +300,7 @@ export default {
         upcoming_appointments: [],
         assigned_patients: []
       },
-      mySchedule: {}, // New: Stores availability data for display
+      mySchedule: {}, 
       loading: true,
       error: '',
       submitting: false,
@@ -397,6 +425,32 @@ export default {
       this.currentAppointment = null;
     },
 
+    // --- CANCEL APPOINTMENT ---
+    async cancelAppointment(appointmentId) {
+      if (!confirm('Are you sure you want to cancel this appointment?')) return;
+
+      try {
+        const response = await fetch(`/api/doctor/appointments/${appointmentId}`, {
+          method: 'PUT',
+          headers: {
+            "Content-Type": "application/json",
+            "Auth-Token": localStorage.getItem("auth_token")
+          },
+          body: JSON.stringify({ status: 'Cancelled' })
+        });
+
+        if (!response.ok) {
+           const data = await response.json();
+           throw new Error(data.message || "Cancellation failed");
+        }
+
+        alert('Appointment cancelled successfully.');
+        this.initData(); // Refresh everything
+      } catch (err) {
+        alert(err.message);
+      }
+    },
+
     // --- VIEW HISTORY ---
     async viewPatientHistory(appointment) {
       this.historyPatientName = appointment.patient_name;
@@ -407,7 +461,10 @@ export default {
       try {
         const response = await fetch(`/api/doctor/patient-history/${appointment.patient_id}`, {
           method: 'GET',
-          headers: this.getHeaders()
+          headers: {
+            "Content-Type": "application/json",
+            "Auth-Token": localStorage.getItem("auth_token")
+          }
         });
 
         if (!response.ok) throw new Error("Failed to load history");
@@ -421,7 +478,7 @@ export default {
       }
     },
 
-    // --- AVAILABILITY LOGIC ---
+    // --- AVAILABILITY LOGIC (DYNAMIC) ---
     openAvailabilityModal() {
       this.initAvailabilityDays();
       this.showAvailabilityModal = true;
@@ -430,29 +487,83 @@ export default {
     initAvailabilityDays() {
       const today = new Date();
       this.availabilityDays = [];
-      // Create slots for the next 7 days
-      for (let i = 1; i <= 7; i++) {
-        const date = new Date(today);
-        date.setDate(today.getDate() + i);
-        this.availabilityDays.push({
-          date: date.toISOString().split('T')[0], // YYYY-MM-DD
-          morning: false,
-          evening: false
+      
+      // Get 'YYYY-MM-DD' for today in LOCAL time (not UTC) to ensure "Today" comparison is correct
+      const todayStr = this.getLocalYYYYMMDD(today);
+
+      const standardTimes = [
+        '08:00', '09:00', '10:00', '11:00', 
+        '16:00', '17:00', '18:00', '19:00', '20:00'
+      ];
+
+      // Create structure for next 7 days, STARTING FROM TODAY
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() + i);
+        const dateStr = this.getLocalYYYYMMDD(d);
+        const isToday = (dateStr === todayStr);
+
+        const dayObj = {
+          date: dateStr,
+          isToday: isToday,
+          slots: []
+        };
+
+        standardTimes.forEach(time => {
+          let selected = false;
+          let disabled = false;
+          let status = 'Available';
+
+          // 1. Check existing state in backend
+          if (this.mySchedule[dateStr]) {
+            const found = this.mySchedule[dateStr].find(s => s.start_time.startsWith(time));
+            if (found) {
+              selected = true; 
+              if (found.status === 'Booked' || found.status === 'Completed') {
+                disabled = true; // Hard lock for booked/completed
+                status = found.status;
+              }
+            }
+          }
+
+          // 2. "Today" Restriction: Lock everything for today
+          if (isToday) {
+            disabled = true;
+          }
+
+          dayObj.slots.push({
+            time: time,
+            selected: selected,
+            disabled: disabled,
+            status: status
+          });
         });
+
+        this.availabilityDays.push(dayObj);
       }
     },
 
     async saveAvailability() {
       this.submitting = true;
-      const slots = [];
+      const slotsToSend = [];
       
       this.availabilityDays.forEach(day => {
-        if (day.morning) {
-          slots.push({ date: day.date, start_time: '08:00', end_time: '12:00' });
-        }
-        if (day.evening) {
-          slots.push({ date: day.date, start_time: '16:00', end_time: '21:00' });
-        }
+        day.slots.forEach(slot => {
+          // Send back slot if it is checked. 
+          // This includes slots that are "disabled" (like today's slots or booked ones),
+          // ensuring they are preserved in the backend deletion/insertion process.
+          if (slot.selected) {
+            const [hours, minutes] = slot.time.split(':');
+            const endHours = parseInt(hours) + 1;
+            const endTime = `${endHours.toString().padStart(2, '0')}:${minutes}`;
+
+            slotsToSend.push({
+              date: day.date,
+              start_time: slot.time,
+              end_time: endTime
+            });
+          }
+        });
       });
       
       try {
@@ -462,14 +573,14 @@ export default {
             "Content-Type": "application/json",
             "Auth-Token": localStorage.getItem("auth_token")
           },
-          body: JSON.stringify({ availabilities: slots })
+          body: JSON.stringify({ availabilities: slotsToSend })
         });
 
         if (!response.ok) throw new Error("Failed to save availability");
 
-        alert('Availability schedule updated successfully!');
+        alert('Availability updated successfully!');
         this.showAvailabilityModal = false;
-        this.loadMySchedule(); // Refresh the display
+        this.loadMySchedule(); 
       } catch (err) {
         alert(err.message);
       } finally {
@@ -478,11 +589,39 @@ export default {
     },
 
     // --- UTILS ---
+    getLocalYYYYMMDD(dateObj) {
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    },
+
     formatDate(dateStr) {
       if (!dateStr) return 'N/A';
       return new Date(dateStr).toLocaleDateString(undefined, {
         weekday: 'short', month: 'short', day: 'numeric'
       });
+    },
+
+    getSlotClass(slot) {
+      if (slot.status === 'Completed') return 'bg-secondary text-decoration-line-through';
+      if (slot.is_booked) return 'bg-danger';
+      return 'bg-success';
+    },
+
+    getModalSlotClass(slot) {
+      if (slot.disabled) {
+        // Locked: Completed
+        if (slot.status === 'Completed') return 'bg-secondary text-white text-decoration-line-through opacity-75';
+        // Locked: Booked
+        if (slot.status === 'Booked') return 'bg-danger text-white opacity-75';
+        // Locked: Today's "Available" slot
+        if (slot.selected) return 'bg-success text-white opacity-75';
+        // Locked: Today's "Empty" slot
+        return 'bg-light text-muted border opacity-75';
+      }
+      // Editable slots (Tomorrow+)
+      return slot.selected ? 'bg-success text-white' : 'bg-light text-dark border';
     }
   }
 }

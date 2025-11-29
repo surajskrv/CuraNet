@@ -2,20 +2,17 @@
   <div>
     <h2 class="mb-4">Patient Dashboard</h2>
     
-    <!-- Loading State -->
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border text-primary" role="status"></div>
       <p class="mt-2 text-muted">Loading dashboard...</p>
     </div>
 
-    <!-- Error Alert -->
     <div v-if="error" class="alert alert-danger alert-dismissible fade show" role="alert">
       {{ error }}
       <button type="button" class="btn-close" @click="error = ''"></button>
     </div>
     
     <div v-else>
-      <!-- Upcoming Appointments -->
       <div class="card mb-4 shadow-sm">
         <div class="card-header bg-white">
           <h5 class="mb-0 text-primary">Upcoming Appointments</h5>
@@ -42,11 +39,14 @@
                     <div class="fw-bold">{{ appt.doctor_name }}</div>
                     <div class="small text-muted">{{ appt.doctor_specialization }}</div>
                   </td>
-                  <td>{{ getDepartmentName(appt.doctor_specialization) }}</td> <!-- Helper if needed, or just doctor_specialization -->
+                  <td>{{ getDepartmentName(appt.doctor_specialization) }}</td>
                   <td>
                     <span class="badge bg-primary">{{ appt.status }}</span>
                   </td>
                   <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" @click="initiateReschedule(appt)">
+                      <i class="bi bi-calendar-event"></i> Reschedule
+                    </button>
                     <button class="btn btn-sm btn-outline-danger" @click="cancelAppointment(appt.id)">
                       <i class="bi bi-x-circle"></i> Cancel
                     </button>
@@ -59,7 +59,6 @@
         </div>
       </div>
       
-      <!-- Departments Grid -->
       <div class="card mb-4 shadow-sm">
         <div class="card-header bg-white">
           <h5 class="mb-0 text-success">Book an Appointment</h5>
@@ -67,7 +66,6 @@
         </div>
         <div class="card-body">
           <div class="row">
-            <!-- Backend returns 'departments' key -->
             <div v-for="dept in dashboardData.departments" :key="dept.id" class="col-md-4 mb-3">
               <div class="card h-100 hover-card">
                 <div class="card-body text-center">
@@ -83,7 +81,6 @@
         </div>
       </div>
       
-      <!-- Doctors List Modal -->
       <div v-if="showDoctorsModal" class="modal-backdrop fade show"></div>
       <div class="modal fade" :class="{ 'show d-block': showDoctorsModal }" tabindex="-1">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -109,7 +106,7 @@
                         <p class="mb-2 small">{{ doctor.bio || 'No bio available' }}</p>
                         <div class="badge bg-light text-dark border">Experience: {{ doctor.experience || 0 }} years</div>
                       </div>
-                      <button class="btn btn-primary" @click="viewDoctorAvailability(doctor)">
+                      <button class="btn btn-primary" @click="initiateBooking(doctor)">
                         Book Visit
                       </button>
                     </div>
@@ -121,20 +118,24 @@
         </div>
       </div>
 
-      <!-- Booking Slot Modal -->
       <div v-if="showBookingModal" class="modal-backdrop fade show" style="z-index: 1055;"></div>
       <div class="modal fade" :class="{ 'show d-block': showBookingModal }" tabindex="-1" style="z-index: 1060;">
         <div class="modal-dialog modal-dialog-scrollable">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title">Book with {{ selectedDoctor?.name }}</h5>
-              <button type="button" class="btn-close" @click="showBookingModal = false"></button>
+              <h5 class="modal-title">
+                {{ isRescheduling ? 'Reschedule Appointment' : 'Book Appointment' }}
+              </h5>
+              <button type="button" class="btn-close" @click="closeBookingModal"></button>
             </div>
             <div class="modal-body">
-              <h6 class="text-muted mb-3">Available Slots (Next 7 Days)</h6>
-              
-              <div v-if="availableSlots.length === 0" class="alert alert-warning">
-                No available slots found for this doctor.
+              <p class="text-muted mb-3">
+                Doctor: <strong>{{ selectedDoctor?.name }}</strong>
+              </p>
+
+              <h6 class="text-primary mb-2">Select a Slot</h6>
+              <div v-if="availableSlots.length === 0" class="alert alert-warning small">
+                No available slots found for the next 7 days.
               </div>
 
               <div class="row g-2 mb-4">
@@ -150,21 +151,35 @@
                 </div>
               </div>
 
-              <div class="mb-3">
-                <label class="form-label">Reason for Visit</label>
-                <textarea 
-                  class="form-control" 
-                  v-model="bookingForm.reason" 
-                  rows="3"
-                  placeholder="Briefly describe your symptoms..."
-                ></textarea>
-              </div>
+              <form ref="bookingFormRef" class="needs-validation" novalidate @submit.prevent>
+                <div class="mb-3">
+                  <label class="form-label">Reason for Visit <span class="text-danger">*</span></label>
+                  <textarea 
+                    class="form-control" 
+                    :class="{'is-invalid': formErrors.reason}"
+                    v-model="bookingForm.reason" 
+                    rows="3"
+                    placeholder="Briefly describe your symptoms..."
+                    required
+                    minlength="3"
+                  ></textarea>
+                  <div class="invalid-feedback">
+                    {{ formErrors.reason || 'Please provide a reason (min 3 chars).' }}
+                  </div>
+                </div>
+              </form>
             </div>
             <div class="modal-footer">
-              <button class="btn btn-secondary" @click="showBookingModal = false">Cancel</button>
-              <button class="btn btn-success" @click="bookAppointment" :disabled="!selectedSlot || submitting">
+              <button class="btn btn-secondary" @click="closeBookingModal">Cancel</button>
+              
+              <button 
+                class="btn" 
+                :class="isRescheduling ? 'btn-warning' : 'btn-success'"
+                @click="confirmAction" 
+                :disabled="!selectedSlot || submitting"
+              >
                 <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
-                Confirm Booking
+                {{ isRescheduling ? 'Confirm Reschedule' : 'Confirm Booking' }}
               </button>
             </div>
           </div>
@@ -194,14 +209,19 @@ export default {
       doctorsList: [],
       selectedDepartment: null,
 
-      // Booking Logic
+      // Booking / Reschedule Logic
       showBookingModal: false,
       selectedDoctor: null,
-      availableSlots: [], // Flattened list of slots
+      availableSlots: [], 
       selectedSlot: null,
+      
+      isRescheduling: false, // Flag to toggle mode
+      rescheduleApptId: null, // ID of appointment being rescheduled
+
       bookingForm: {
         reason: ''
-      }
+      },
+      formErrors: {}
     }
   },
   mounted() {
@@ -246,7 +266,6 @@ export default {
       this.doctorsList = [];
       
       try {
-        // Backend search filters by department_id
         const response = await fetch(`/api/patient/doctors?department_id=${department.id}`, {
           method: 'GET',
           headers: {
@@ -265,29 +284,71 @@ export default {
       }
     },
 
-    // --- AVAILABILITY LOGIC ---
-    viewDoctorAvailability(doctor) {
+    // --- SETUP BOOKING (NEW) ---
+    initiateBooking(doctor) {
+      this.isRescheduling = false;
+      this.rescheduleApptId = null;
+      this.bookingForm.reason = ''; // Clear reason
+      this.prepareModal(doctor);
+    },
+
+    // --- SETUP RESCHEDULE (EXISTING) ---
+    async initiateReschedule(appt) {
+      this.isRescheduling = true;
+      this.rescheduleApptId = appt.id;
+      this.bookingForm.reason = appt.reason || ''; // Pre-fill reason
+      
+      // Need to fetch doctor details/availability to show in modal
+      // We can construct a temp doctor object or fetch it. 
+      // For simplicity, we'll fetch the doctor list for this specialization logic or 
+      // just hit the specific doctor endpoint if available. 
+      // Since we don't have a single doctor fetch endpoint in the list, 
+      // we can try searching or assume we have to re-fetch availability.
+      
+      // Quick fix: Fetch specific doctor by ID to get availability
+      // Assuming GET /api/patient/doctors returns list, we filter? 
+      // Better: Backend `search_doctors` returns availability. 
+      // Let's call search with name to narrow it down.
+      
+      this.submitting = true; // Show loading briefly
+      try {
+        const response = await fetch(`/api/patient/doctors?name=${encodeURIComponent(appt.doctor_name)}`, {
+           headers: { "Auth-Token": localStorage.getItem("auth_token") }
+        });
+        const docs = await response.json();
+        const doctor = docs.find(d => d.id === appt.doctor_id);
+        
+        if (doctor) {
+          this.prepareModal(doctor);
+        } else {
+          alert("Doctor details not found.");
+        }
+      } catch(e) {
+        alert("Error loading doctor schedule");
+      } finally {
+        this.submitting = false;
+      }
+    },
+
+    prepareModal(doctor) {
       this.selectedDoctor = doctor;
-      this.showDoctorsModal = false; // Close list modal
-      this.showBookingModal = true; // Open booking modal
-      this.bookingForm.reason = '';
+      this.showDoctorsModal = false;
+      this.showBookingModal = true;
       this.selectedSlot = null;
-      
-      // Backend returns availability as a Dict: { '2023-10-10': [{start_time: '10:00', ...}] }
-      // We need to flatten this into a simple array for the UI
+      this.formErrors = {};
+
+      // Flatten availability
       this.availableSlots = [];
-      
       if (doctor.availability) {
         for (const [dateStr, slots] of Object.entries(doctor.availability)) {
           slots.forEach(slot => {
             this.availableSlots.push({
               date: dateStr,
-              time: slot.start_time // Using start_time as the slot identifier
+              time: slot.start_time
             });
           });
         }
       }
-      // Sort slots by date/time
       this.availableSlots.sort((a, b) => new Date(a.date + 'T' + a.time) - new Date(b.date + 'T' + b.time));
     },
 
@@ -299,21 +360,53 @@ export default {
       return this.selectedSlot && this.selectedSlot.date === slot.date && this.selectedSlot.time === slot.time;
     },
 
-    // --- BOOK APPOINTMENT ---
-    async bookAppointment() {
-      if (!this.selectedSlot) return;
-      
+    closeBookingModal() {
+      this.showBookingModal = false;
+      this.bookingForm.reason = '';
+      this.formErrors = {};
+    },
+
+    // --- CONFIRM ACTION (BOOK or RESCHEDULE) ---
+    async confirmAction() {
+      // Frontend Validation
+      this.formErrors = {};
+      if (!this.bookingForm.reason || this.bookingForm.reason.length < 3) {
+        this.formErrors.reason = "Reason is required (min 3 chars).";
+        return;
+      }
+      if (!this.selectedSlot) {
+        alert("Please select a time slot.");
+        return;
+      }
+
       this.submitting = true;
       try {
-        const payload = {
-          doctor_id: this.selectedDoctor.id,
-          date: this.selectedSlot.date, // Backend expects 'date'
-          time: this.selectedSlot.time, // Backend expects 'time'
-          reason: this.bookingForm.reason
-        };
+        let url, method, payload;
 
-        const response = await fetch('/api/patient/appointments', {
-          method: 'POST',
+        if (this.isRescheduling) {
+          // UPDATE (PUT)
+          url = `/api/patient/appointments/${this.rescheduleApptId}`;
+          method = 'PUT';
+          payload = {
+            date: this.selectedSlot.date,
+            time: this.selectedSlot.time
+            // Note: Current backend PUT mainly updates time/date. 
+            // If you want to update reason too, update backend `update_cancel_appointment` logic.
+          };
+        } else {
+          // CREATE (POST)
+          url = '/api/patient/appointments';
+          method = 'POST';
+          payload = {
+            doctor_id: this.selectedDoctor.id,
+            date: this.selectedSlot.date,
+            time: this.selectedSlot.time,
+            reason: this.bookingForm.reason
+          };
+        }
+
+        const response = await fetch(url, {
+          method: method,
           headers: {
             "Content-Type": "application/json",
             "Auth-Token": localStorage.getItem("auth_token")
@@ -323,11 +416,11 @@ export default {
 
         const data = await response.json();
 
-        if (!response.ok) throw new Error(data.message || "Booking failed");
+        if (!response.ok) throw new Error(data.message || "Action failed");
 
-        alert("Appointment booked successfully!");
-        this.showBookingModal = false;
-        this.loadDashboard(); // Refresh upcoming appointments
+        alert(this.isRescheduling ? "Appointment rescheduled!" : "Appointment booked successfully!");
+        this.closeBookingModal();
+        this.loadDashboard();
         
       } catch (err) {
         alert(err.message);
@@ -369,7 +462,6 @@ export default {
     },
     
     getDepartmentName(specialization) {
-        // This is just a fallback if department name isn't directly on the appointment object
         return specialization || 'General'; 
     }
   }

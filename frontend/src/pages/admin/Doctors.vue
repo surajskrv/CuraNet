@@ -115,11 +115,18 @@
               <div class="row">
                  <div class="col-md-6 mb-3">
                   <label class="form-label">Phone Number</label>
-                  <input type="tel" class="form-control" v-model="doctorForm.phone" placeholder="10-digit number" />
+                  <input type="tel" class="form-control" v-model="doctorForm.phone" 
+                  minlength="10"
+                  maxlength="10"
+                  pattern="[6-9]{1}[0-9]{9}"
+                  placeholder="10-digit number" />
                 </div>
                 <div class="col-md-6 mb-3">
-                   <label class="form-label">Pincode</label>
-                   <input type="text" class="form-control" v-model="doctorForm.pincode" />
+                  <label class="form-label">Pincode</label>
+                  <input type="text" class="form-control" v-model="doctorForm.pincode" 
+                  minlength="6"
+                  maxlength="6"
+                  pattern="[0-9]{6}" />
                 </div>
               </div>
 

@@ -4,6 +4,7 @@ from ..extensions import db
 from ..models import User, Doctor, Patient, Department, Appointment, Treatment, DoctorAvailability
 from datetime import date, datetime, timedelta
 from sqlalchemy import func, or_
+import re
 
 @app.route('/api/admin/dashboard', methods=['GET'])
 @auth_required('token')
@@ -66,6 +67,9 @@ def manage_doctors():
             phone = data.get('phone', '')
             address = data.get('address', '')
             pincode = data.get('pincode', '')
+            
+            if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+                return jsonify({"message": "Invalid email address"}), 400
             
             if not email or not password or not name or not specialization:
                 return jsonify({"message": "Email, password, name, and specialization are required"}), 400
@@ -298,11 +302,14 @@ def manage_departments():
             departments = Department.query.all()
             dept_list = []
             for dept in departments:
+                # Calculate the count dynamically based on the actual Doctor table
+                doc_count = Doctor.query.filter_by(department_id=dept.id, is_active=True).count()
+                
                 dept_list.append({
                     'id': dept.id,
                     'name': dept.name,
                     'description': dept.description,
-                    'doctors_registered': dept.doctors_registered,
+                    'doctors_registered': doc_count, # Use the dynamic count here
                     'created_at': dept.created_at.strftime('%Y-%m-%d')
                 })
             return jsonify(dept_list), 200
@@ -318,6 +325,7 @@ def manage_departments():
             if Department.query.filter_by(name=name).first():
                 return jsonify({"message": "Department already exists"}), 409
             
+            # We don't need to pass doctors_registered here, it defaults to 0 or is calculated on GET
             department = Department(name=name, description=description)
             db.session.add(department)
             db.session.commit()

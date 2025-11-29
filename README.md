@@ -1,91 +1,118 @@
-# **CuraNet - Hospital Management System**
+# CuraNet - Hospital Management System
 
-A comprehensive web application for managing hospital operations, streamlining interactions between **Admins**, **Doctors**, and **Patients**. Built with a modern tech stack ensuring performance, security, and ease of use.
+CuraNet is a comprehensive web application designed to streamline hospital operations. It facilitates interaction between **Administrators**, **Doctors**, and **Patients**, providing a unified platform for appointment booking, medical record management, and hospital administration.
 
----
+## 🚀 Tech Stack
 
-## 🚀 **Tech Stack**
+### Frontend
+- **Framework:** Vue.js 3
+- **Build Tool:** Vite
+- **Routing:** Vue Router
+- **Styling:** Bootstrap 5 & Bootstrap Icons
+- **HTTP Client:** Fetch API
 
-**Frontend:** Vue.js 3 (Options API), Vite, Vue Router  
-**Styling:** Bootstrap 5, Bootstrap Icons  
-**Backend:** Flask (Python 3.10+)  
-**Database:** SQLite (Development), SQLAlchemy ORM  
-**Authentication:** Flask-Security (Token-based Auth)  
-**Caching & Tasks:** Redis & Celery (Optional for background tasks)
-
----
-
-## 🌟 **Features**
-
-### 🛡️ **Admin Module**
-
-- **Interactive Dashboard:** Real-time statistics on doctors, patients, and appointments.  
-- **Doctor Management:** Onboard doctors, assign departments, view profiles, blacklist accounts.  
-- **Patient Management:** View patient records, contact details, manage access.  
-- **Department Management:** Create and manage hospital departments/specializations.  
-- **Appointment Oversight:** View all hospital appointments with filtering.
+### Backend
+- **Framework:** Flask (Python)
+- **Database:** SQLite (Development), SQLAlchemy ORM
+- **Authentication:** Flask-Security (Token-based Auth & Hashing)
+- **API:** RESTful endpoints
 
 ---
 
-### 👨‍⚕️ **Doctor Module**
+## 🌟 Key Features
 
-- **Physician Dashboard:** Today’s schedule, upcoming appointments, assigned patients.  
-- **Appointment Management:** Complete appointments, add diagnoses, prescriptions, notes.  
-- **Patient History:** Access detailed medical history of treated patients.  
-- **Availability Scheduler:** Visual interface to set availability for next 7 days.
+### 🛡️ Admin Module
+- **Dashboard:** Real-time statistics on doctors, patients, and appointment status.
+- **Doctor Management:** Onboard new doctors, assign departments, and manage profiles.
+- **Patient Management:** View registered patients and manage access.
+- **Department Management:** Create and organize hospital departments (e.g., Cardiology, Neurology).
+- **Appointment Oversight:** View all hospital appointments with filtering capabilities.
 
----
+### 👨‍⚕️ Doctor Module
+- **Dashboard:** View daily/weekly schedules and upcoming appointments.
+- **Availability Management:** Set specific working hours (Morning/Evening slots) for the next 7 days.
+- **Consultation:** Complete appointments by adding diagnoses, prescriptions, and notes.
+- **Patient History:** Access the medical history of treated patients.
 
-### 🏥 **Patient Module**
-
-- **User Portal:** Register, login, and manage personal profile.  
-- **Book Appointments:** Browse doctors by department, check availability, book slots.  
-- **Medical History:** View past treatments, prescriptions, diagnoses.  
-- **Export Data:** Download treatment history as CSV.  
-- **Appointment Management:** View and cancel upcoming schedules.
-
----
-
-## 🛠️ **Setup Instructions**
-
-### **Prerequisites**
-
-- Python 3.8+  
-- Node.js 16+ and npm  
-- Redis (Optional)
+### 🏥 Patient Module
+- **Online Booking:** Search doctors by department or name and book available time slots.
+- **Medical Profile:** Manage personal details and emergency contacts.
+- **Treatment History:** View past diagnoses and prescriptions.
+- **Appointment Management:** Reschedule or cancel upcoming bookings.
 
 ---
 
-## **1. Backend Setup (Flask)**
+## ⚙️ Installation & Setup
+
+### Prerequisites
+- Python 3.8+
+- Node.js 16+ & npm
+
+### 1. Backend Setup (Flask)
+
+1.  Navigate to the root directory.
+2.  Create and activate a virtual environment:
+    ```bash
+    python -m venv venv
+    # Windows
+    venv\Scripts\activate
+    # Mac/Linux
+    source venv/bin/activate
+    ```
+3.  Install dependencies:
+    ```bash
+    pip install -r backend/requirements.txt
+    ```
+4.  Run the application (this will automatically seed the database with default data):
+    ```bash
+    python run.py
+    ```
+    *The backend runs at `http://127.0.0.1:5000`*
+
+### 2. Frontend Setup (Vue.js)
+
+1.  Open a new terminal and navigate to the frontend directory:
+    ```bash
+    cd frontend
+    ```
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
+3.  Start the development server:
+    ```bash
+    npm run dev
+    ```
+    *The frontend runs at `http://localhost:5173`*
+
+---
+
+## Default Credentials
+
+The application initializes with the following default accounts for testing:
+
+| Role      | Email              | Password      |
+| :-------- | :----------------- | :------------ |
+| **Admin** | `admin@gmail.com`  | `helloadmin`  |
+| **Doctor** | `doctor@gmail.com` | `doctor123`   |
+| **Patient**| `ram@gmail.com`    | `ram123`      |
+
+---
+
+## 📂 Project Structure
 
 ```bash
-# 1. Create virtual environment
-python -m venv venv
-
-# 2. Activate environment
-# Windows:
-venv\Scripts\activate
-# Mac/Linux:
-source venv/bin/activate
-
-# 3. Install dependencies
-pip install -r requirements.txt
-
-# 4. Initialize DB & Create Admin
-python run.py
-```
-
-## **2. Frontend Setup (Flask)**
-
-```bash
- cd frontend
-
-# Install dependencies
-npm install
-
-# Start dev server
-npm run dev
-```
-
-### 📝 License
-This project is open-source under the MIT License.
+CuraNet/
+├── backend/
+│   ├── routes/             # API endpoints (admin, auth, doctor, patient)
+│   ├── models.py           # Database models
+│   ├── createData.py       # Data seeding script
+│   └── app.py              # Flask app factory
+├── frontend/
+│   ├── src/
+│   │   ├── pages/          # Vue views (Admin, Doctor, Patient)
+│   │   ├── layouts/        # Page layouts
+│   │   └── services/       # API integration
+│   └── vite.config.js      # Vite config
+├── instance/               # SQLite database
+└── run.py                  # Entry point

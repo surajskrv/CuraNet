@@ -122,7 +122,6 @@
                       <small class="text-muted">{{ h.doctor_specialization }}</small>
                     </td>
                     <td>{{ h.reason || '-' }}</td>
-                    <!-- Accessing flat keys from backend history list -->
                     <td>{{ h.diagnosis || '-' }}</td>
                     <td>{{ h.prescription || '-' }}</td>
                     <td>{{ h.notes || '-' }}</td>
@@ -164,22 +163,32 @@ export default {
     }
   },
   computed: {
-    // We filter client-side because backend only supports basic date equality
     filteredAppointments() {
       let filtered = this.appointments;
 
-      // 1. Status Filter
+      // 1. Status Filter (Dropdown)
       if (this.filterStatus) {
         filtered = filtered.filter(a => a.status === this.filterStatus);
       }
 
-      // 2. Upcoming Filter (Client side logic)
+      // 2. Upcoming Filter (Switch)
       if (this.showUpcoming) {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Reset time to compare dates only
-        
+        // Create "Today" at 00:00:00 Local Time
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
         filtered = filtered.filter(a => {
-          const apptDate = new Date(a.date);
+          // Requirement: Show ONLY 'Booked' slots when switch is ON
+          if (a.status !== 'Booked') return false;
+
+          if (!a.date) return false;
+          
+          // Parse YYYY-MM-DD manually to construct Local Date object
+          // This prevents UTC offset issues (e.g. "2025-11-30" appearing as "Nov 29 7pm")
+          const [year, month, day] = a.date.split('-').map(Number);
+          const apptDate = new Date(year, month - 1, day); // Month is 0-indexed in JS
+          
+          // Compare: Appointment Date must be Today or Future
           return apptDate >= today;
         });
       }
@@ -196,7 +205,8 @@ export default {
       this.loading = true;
       this.error = '';
       try {
-        // Build URL parameters
+        // Fetch all appointments. We filter client-side for better responsiveness
+        // unless data set is huge.
         const params = new URLSearchParams();
         if (this.filterStatus) params.append('status', this.filterStatus);
         
