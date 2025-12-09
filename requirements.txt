@@ -18,7 +18,7 @@ click==8.1.7
 click-didyoumean==0.3.1
 click-plugins==1.1.1.2
 click-repl==0.3.0
-cockpit @ file:///builddir/build/BUILD/cockpit-351-build/cockpit-351/tmp/wheel/cockpit-351-py3-none-any.whl#sha256=59d2dcd42c86f8d88df2a0b4afd6bee5c58753efde42f78d6ed1686b14aa61df
+
 crypt_r==3.13.1
 cupshelpers==1.0
 dasbus==1.7
@@ -80,9 +80,6 @@ pycups==2.0.4
 pyenchant==3.2.2
 PyGObject==3.54.5
 pyinotify==0.9.6
-PyJWT==2.10.1
-pykickstart @ file:///builddir/build/BUILD/pykickstart-3.66-build/pykickstart-3.66
-pyparted==3.13.0
 PySocks==1.7.1
 python-augeas==1.2.0
 python-dateutil==2.9.0.post0
@@ -93,8 +90,6 @@ python-pam==2.0.2
 python-utils==3.9.1
 pyudev==0.24.3
 pyxdg==0.27
-PyYAML==6.0.2
-pyynl @ file:///builddir/build/BUILD/kernel-6.17.8-build/kernel-6.17.8/linux-6.17.8-300.fc43.x86_64/tools/net/ynl
 RapidFuzz==3.12.2
 redis==5.0.1
 referencing==0.36.2
@@ -106,8 +101,6 @@ rpds-py==0.27.0
 rpm==6.0.0
 rpmautospec==0.8.3
 rpmautospec-core==0.1.5
-selinux @ file:///builddir/build/BUILD/libselinux-3.9-build/libselinux-3.9/src
-sepolicy @ file:///builddir/build/BUILD/policycoreutils-3.9-build/selinux-3.9/python/sepolicy
 setools==4.6.0
 setuptools==78.1.1
 simpleline==1.9.0
