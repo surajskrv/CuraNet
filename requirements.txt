@@ -125,3 +125,5 @@ wcwidth==0.2.14
 Werkzeug==3.0.1
 WTForms==3.2.1
 xkbregistry==0.3
+gunicorn==21.2.0
+psycopg2-binary==2.9.9
