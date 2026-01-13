@@ -1,19 +1,12 @@
 FROM python:3.10-slim
 
-# Set working directory inside container
 WORKDIR /app
 
-# Copy requirements first (better caching)
-COPY requirements.txt .
+COPY requirements.txt /app/backend/
+RUN pip install --no-cache-dir -r backend/requirements.txt
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+COPY . /app/backend
 
-# Copy full backend code
-COPY . .
-
-# Expose Flask port
 EXPOSE 5000
 
-# Run Flask app
-CMD ["python", "app.py"]
+CMD ["python", "-m", "backend.app"]
