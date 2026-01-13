@@ -2,18 +2,11 @@ version: "3.8"
 
 services:
   backend:
-    backend:
-  build:
-    context: ./backend
-  container_name: curanet-backend
-  ports:
-    - "5000:5000"
-
-    volumes:
-      - ./backend:/app
-      - ./backend/instance:/app/instance
-    environment:
-      - FLASK_ENV=production
+    build:
+      context: ./backend
+    container_name: curanet-backend
+    ports:
+      - "5000:5000"
 
   frontend:
     build:
