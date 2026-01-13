@@ -1,9 +1,9 @@
 from flask import current_app as app, jsonify, request
-from flask_security import auth_required, roles_accepted
+from flask_security import auth_required, roles_accepted, hash_password
 from ..extensions import db
-from ..models import User, Doctor, Patient, Department, Appointment, Treatment, DoctorAvailability
-from datetime import date, datetime, timedelta
-from sqlalchemy import func, or_
+from ..models import User, Doctor, Patient, Department, Appointment
+from datetime import date, datetime
+from sqlalchemy import or_
 import re
 
 @app.route('/api/admin/dashboard', methods=['GET'])
@@ -475,3 +475,38 @@ def get_single_patient(patient_id):
         }), 200
     except Exception as e:
         return jsonify({"message": "Error fetching patient", "error": str(e)}), 500
+    
+@app.route('/api/admin/profile', methods=['GET', 'PATCH'])
+@auth_required('token')
+@roles_accepted('admin')
+def admin_profile():
+    try:
+        admin_user = app.security.datastore.find_user(email='admin@gmail.com')
+        if request.method == 'GET':
+            return jsonify({
+                    'id': admin_user.id,
+                    'name': admin_user.name,
+                    'email': admin_user.email,
+                    'phone': admin_user.phone,
+                    'address': admin_user.address,
+                    'pincode': admin_user.pincode
+                    
+                }),200
+        elif request.method == 'PATCH':
+            data = request.get_json()
+            
+            if data.get('name'):
+                admin_user.name = data.get('name')
+            if data.get('phone'):
+                admin_user.phone = data.get('phone')
+            if data.get('address'):
+                admin_user.address = data.get('address')    
+            if data.get('pincode'):
+                admin_user.pincode = data.get('pincode')
+            if data.get('password'):
+                admin_user.password = hash_password(data.get('password'))
+            db.session.commit()
+            return jsonify({"message": "Admin profile updated successfully"}), 200
+            
+    except Exception as e:
+        return jsonify({"message": "Error fetching admin profile", "error": str(e)}), 500

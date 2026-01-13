@@ -42,6 +42,11 @@ const routes = [
         path: 'appointments',
         name: 'AdminAppointments',
         component: () => import('@/pages/admin/Appointments.vue')
+      },
+      {
+        path: 'profile',
+        name: 'AdminProfile',
+        component: () => import('@/pages/admin/Profile.vue')
       }
     ]
   },

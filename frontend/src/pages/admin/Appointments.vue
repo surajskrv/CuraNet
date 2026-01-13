@@ -1,8 +1,7 @@
 <template>
   <div>
     <h2 class="mb-4">All Appointments</h2>
-    
-    <!-- Filters -->
+
     <div class="mb-3 d-flex align-items-center gap-2">
       <select class="form-select w-auto shadow-sm" v-model="filterStatus">
         <option value="">All Status</option>
@@ -205,8 +204,6 @@ export default {
       this.loading = true;
       this.error = '';
       try {
-        // Fetch all appointments. We filter client-side for better responsiveness
-        // unless data set is huge.
         const params = new URLSearchParams();
         if (this.filterStatus) params.append('status', this.filterStatus);
         

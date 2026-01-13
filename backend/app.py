@@ -1,7 +1,7 @@
 from flask import Flask
-from backend.extensions import db
-from backend.models import User, Role
-from backend.config import LocalDevelopmentConfig
+from .extensions import db
+from .models import User, Role
+from .config import LocalDevelopmentConfig
 from flask_security import Security, SQLAlchemyUserDatastore
 
 app = None
@@ -13,16 +13,20 @@ def start():
     datastore = SQLAlchemyUserDatastore(db, User, Role)
     app.security = Security(app, datastore)
     app.app_context().push()
+    db.create_all()
     
     return app
     
 app = start()
 
-from backend.createData import *
-from backend.routes.authRoutes import *   
-from backend.routes.adminRoutes import *   
-from backend.routes.patientRoutes import *   
-from backend.routes.doctorRoutes import *   
+from .createData import *
+from .routes.authRoutes import *   
+from .routes.adminRoutes import *   
+from .routes.patientRoutes import *   
+from .routes.doctorRoutes import *   
 
 if __name__ == '__main__':
     app.run()
+    
+if __name__ == '__main__':
+    app.run(port=5000)

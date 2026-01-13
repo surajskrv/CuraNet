@@ -1,19 +1,38 @@
 <template>
-  <div class="d-flex flex-column min-vh-100 bg-light">
+  <div class="d-flex flex-column min-vh-100 bg-light-subtle">
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-health-gradient shadow-sm">
-      <div class="container">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top py-3">
+      <div class="container-xl">
         <!-- Brand -->
-        <router-link class="navbar-brand d-flex align-items-center gap-2 fw-bold" to="/patient/dashboard">
-          <div class="bg-white rounded-circle p-1 d-flex align-items-center justify-content-center logo-container">
+        <router-link class="navbar-brand d-flex align-items-center gap-2 me-4" to="/patient/dashboard">
+          <div class="bg-primary bg-opacity-10 rounded-circle p-1 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px">
             <img src="/img.png" alt="Logo" width="24" height="24">
           </div>
-          <span class="tracking-tight">CuraNet Patient</span>
+          <svg
+            width="170"
+            height="32"
+            viewBox="0 0 250 40"
+            xmlns="http://www.w3.org/2000/svg"
+            class="d-none d-sm-block"
+          >
+            <text
+              x="0"
+              y="32"
+              font-family="system-ui, -apple-system, sans-serif"
+              font-weight="bold"
+              font-size="32"
+              letter-spacing="-0.5"
+            >
+              <tspan fill="#0d6efd">Cura</tspan>
+              <tspan fill="#198754">Net</tspan>
+              <tspan fill="#495057" font-weight="normal" font-size="24" dx="5">Patient</tspan>
+            </text>
+          </svg>
         </router-link>
 
         <!-- Mobile Toggle -->
         <button 
-          class="navbar-toggler border-0" 
+          class="navbar-toggler border-0 shadow-none bg-light rounded-circle p-2" 
           type="button" 
           @click="toggleNavbar"
           aria-label="Toggle navigation"
@@ -25,80 +44,73 @@
         <div class="collapse navbar-collapse" :class="{ show: navbarOpen }">
           
           <!-- Navigation Links -->
-          <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
+          <ul class="navbar-nav mx-auto mb-2 mb-lg-0 gap-1">
             <li class="nav-item">
-              <router-link class="nav-link px-3 rounded-pill" to="/patient/dashboard" active-class="active">
+              <router-link class="nav-link px-3 rounded-pill fw-medium" to="/patient/dashboard">
                 <i class="bi bi-grid-fill me-2"></i>Dashboard
               </router-link>
             </li>
             <li class="nav-item">
-              <router-link class="nav-link px-3 rounded-pill" to="/patient/history" active-class="active">
+              <router-link class="nav-link px-3 rounded-pill fw-medium" to="/patient/history">
                 <i class="bi bi-clock-history me-2"></i>History
               </router-link>
             </li>
             <li class="nav-item">
-              <router-link class="nav-link px-3 rounded-pill" to="/patient/profile" active-class="active">
+              <router-link class="nav-link px-3 rounded-pill fw-medium" to="/patient/profile">
                 <i class="bi bi-person-circle me-2"></i>Profile
               </router-link>
             </li>
           </ul>
 
           <!-- User Menu -->
-          <ul class="navbar-nav align-items-lg-center gap-2">
-            <!-- Divider on Desktop -->
-            <li class="nav-item d-none d-lg-block">
-              <div class="vr h-100 text-white opacity-50 mx-2"></div>
-            </li>
+          <div class="d-flex align-items-center gap-3 mt-3 mt-lg-0 pt-3 pt-lg-0 border-top border-lg-0">
+            <!-- Divider (Desktop) -->
+            <div class="d-none d-lg-block border-end h-50 mx-1" style="min-height: 24px;"></div>
             
-            <!-- User Greeting -->
-            <li class="nav-item text-white">
-              <div class="d-flex align-items-center gap-2">
-                <div class="text-end d-none d-lg-block">
-                  <div class="small opacity-75" style="line-height: 1;">Welcome,</div>
-                  <div class="fw-bold" style="line-height: 1.2;">{{ userName || 'Patient' }}</div>
-                </div>
-                <!-- Mobile Only Greeting -->
-                <span class="d-lg-none mb-2">Welcome, <strong>{{ userName || 'Patient' }}</strong></span>
+            <div class="d-flex align-items-center gap-2">
+              <div class="text-end d-none d-md-block" style="line-height: 1.2;">
+                <div class="fw-bold text-dark small">{{ userName || 'Patient' }}</div>
+                <div class="text-muted" style="font-size: 0.75rem;">Portal User</div>
               </div>
-            </li>
+              <div class="bg-primary bg-opacity-10 rounded-circle border d-flex align-items-center justify-content-center text-primary" style="width: 38px; height: 38px;">
+                <i class="bi bi-person-fill"></i>
+              </div>
+            </div>
 
-            <!-- Logout Button -->
-            <li class="nav-item ms-lg-3">
-              <button 
-                class="btn btn-white text-teal fw-bold shadow-sm w-100 w-lg-auto d-flex align-items-center justify-content-center" 
-                @click="handleLogout"
-              >
-                <i class="bi bi-box-arrow-right me-2"></i> Logout
-              </button>
-            </li>
-          </ul>
+            <button
+              class="btn btn-outline-danger btn-sm rounded-pill px-3 d-flex align-items-center gap-2 ms-2"
+              @click="handleLogout"
+              title="Logout"
+            >
+              <i class="bi bi-box-arrow-right"></i>
+              <span class="d-lg-none">Logout</span>
+            </button>
+          </div>
         </div>
       </div>
     </nav>
 
     <!-- Main Content Area with Transition -->
-    <div class="container py-4 flex-grow-1">
+    <main class="container-xl py-4 flex-grow-1">
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
           <component :is="Component" />
         </transition>
       </router-view>
-    </div>
+    </main>
 
     <!-- Footer -->
-    <footer class="bg-white border-top py-3 mt-auto">
-      <div class="container text-center text-muted">
-        <small>
-          &copy; {{ new Date().getFullYear() }} <strong>CuraNet</strong>. Your Health, Our Priority.
-        </small>
+    <footer class="bg-white border-top py-4 mt-auto">
+      <div class="container text-center">
+        <p class="text-muted mb-0 small">
+          &copy; {{ new Date().getFullYear() }} <span class="fw-bold text-primary">CuraNet</span>. Your Health, Our Priority.
+        </p>
       </div>
     </footer>
   </div>
 </template>
 
 <script>
-import { patientAPI } from '@/services/api';
-
 export default {
   name: 'PatientLayout',
   data() {
@@ -122,8 +134,21 @@ export default {
     
     async fetchUserProfile() {
       try {
-        const data = await patientAPI.getProfile();
-        this.userName = data.name;
+        const token = localStorage.getItem('auth_token');
+        if (!token) return;
+
+        const response = await fetch('/api/patient/profile', {
+          method: 'GET',
+          headers: { 
+            'Content-Type': 'application/json',
+            "Auth-Token": localStorage.getItem("auth_token")
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          this.userName = data.name;
+        }
       } catch (error) {
         console.warn("Could not fetch user name for header");
       }
@@ -131,15 +156,19 @@ export default {
 
     async handleLogout() {
       if(!confirm("Are you sure you want to logout?")) return;
-
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('user_id');
-      localStorage.removeItem('user_role');
-
       try {
-        await fetch('/api/logout', { method: 'POST' }); 
+        await fetch('/api/logout', { 
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            "Auth-Token": localStorage.getItem("auth_token")
+          }
+        });
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_role');
+        localStorage.removeItem('user_id');
       } catch (error) {
-        console.warn("Backend logout failed, but frontend cleared.");
+        console.warn("Backend logout failed", error);
       }
 
       this.$router.push('/login');
@@ -149,59 +178,38 @@ export default {
 </script>
 
 <style scoped>
-/* Custom Gradient for Healthcare feel */
-.bg-health-gradient {
-  background: linear-gradient(135deg, #20c997 0%, #0d6efd 100%);
-}
-
-.logo-container {
-  width: 32px; 
-  height: 32px;
-}
-
-/* Nav Link Styling */
+/* Navigation Link Styling */
 .nav-link {
-  color: rgba(255, 255, 255, 0.9) !important;
-  transition: all 0.2s ease;
-  font-weight: 500;
+  color: #6c757d; /* Bootstrap secondary text */
+  transition: all 0.2s ease-in-out;
+  font-size: 0.95rem;
 }
 
 .nav-link:hover {
-  background-color: rgba(255, 255, 255, 0.15);
-  color: #fff !important;
-  transform: translateY(-1px);
+  color: #0d6efd; /* Primary Blue */
+  background-color: rgba(13, 110, 253, 0.08);
 }
 
-.nav-link.active {
-  background-color: rgba(255, 255, 255, 0.25);
-  color: #fff !important;
+/* Active State */
+.nav-link.router-link-active {
+  color: #0d6efd !important;
+  background-color: rgba(13, 110, 253, 0.12);
   font-weight: 600;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-/* Custom Button */
-.btn-white {
-  background-color: #fff;
-  color: #0d6efd; /* Fallback */
-  color: var(--bs-primary);
-  border: none;
-  transition: transform 0.2s;
-}
-.btn-white:hover {
-  transform: translateY(-1px);
-  background-color: #f8f9fa;
-}
-.text-teal {
-  color: #20c997; /* Matches gradient start */
+  box-shadow: inset 0 0 0 1px rgba(13, 110, 253, 0.1);
 }
 
 /* Page Transition */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.2s ease;
+  transition: opacity 0.15s ease;
 }
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* Utilities */
+.bg-light-subtle {
+  background-color: #f8f9fa;
 }
 </style>

@@ -97,8 +97,6 @@ The application initializes with the following default accounts for testing:
 | Role      | Email              | Password      |
 | :-------- | :----------------- | :------------ |
 | **Admin** | `admin@gmail.com`  | `helloadmin`  |
-| **Doctor** | `doctor@gmail.com` | `doctor123`   |
-| **Patient**| `ram@gmail.com`    | `ram123`      |
 
 ---
 
