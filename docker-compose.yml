@@ -7,6 +7,8 @@ services:
       dockerfile: backend/Dockerfile
     ports:
       - "5000:5000"
+    volumes:
+      - backend_data:/app/instance
     restart: unless-stopped
 
   frontend:
@@ -17,3 +19,6 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+
+volumes:
+  backend_data:
