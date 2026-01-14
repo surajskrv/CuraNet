@@ -61,6 +61,8 @@ CuraNet is a comprehensive web application designed to streamline hospital opera
     ```
 3.  Install dependencies:
     ```bash
+    cd backend
+    
     pip install -r backend/requirements.txt
 
     # Linux
@@ -68,7 +70,7 @@ CuraNet is a comprehensive web application designed to streamline hospital opera
     ```
 4.  Run the application (this will automatically seed the database with default data):
     ```bash
-    python run.py
+    python -m backend.app
     ```
     *The backend runs at `http://127.0.0.1:5000`*
 
@@ -116,4 +118,5 @@ CuraNet/
 │   │   └── services/       # API integration
 │   └── vite.config.js      # Vite config
 ├── instance/               # SQLite database
+
 └── run.py                  # Entry point
