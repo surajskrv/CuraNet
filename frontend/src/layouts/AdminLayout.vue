@@ -22,7 +22,6 @@
             height="32"
             viewBox="0 0 250 40"
             xmlns="http://www.w3.org/2000/svg"
-            class="d-none d-sm-block"
           >
             <text
               x="0"
@@ -199,4 +198,5 @@ export default {
 .bg-light-subtle {
   background-color: #f8f9fa; /* Slightly off-white page background */
 }
+
 </style>
