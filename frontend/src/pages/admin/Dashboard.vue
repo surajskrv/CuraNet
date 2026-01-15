@@ -1,9 +1,13 @@
 <template>
   <div>
     <h2 class="mb-4">Admin Dashboard</h2>
-    
+
     <!-- Error Alert -->
-    <div v-if="error" class="alert alert-danger alert-dismissible fade show" role="alert">
+    <div
+      v-if="error"
+      class="alert alert-danger alert-dismissible fade show"
+      role="alert"
+    >
       <i class="bi bi-exclamation-triangle-fill me-2"></i>
       {{ error }}
       <button type="button" class="btn-close" @click="error = ''"></button>
@@ -16,7 +20,7 @@
       </div>
       <p class="mt-2 text-muted">Loading dashboard data...</p>
     </div>
-    
+
     <div v-else>
       <!-- Stats Cards -->
       <div class="row mb-4">
@@ -27,7 +31,10 @@
                 <h6 class="card-title opacity-75">Total Doctors</h6>
                 <h2 class="fw-bold mb-0">{{ stats.total_doctors }}</h2>
               </div>
-              <i class="bi bi-person-badge position-absolute end-0 bottom-0 p-3" style="font-size: 3rem; opacity: 0.3;"></i>
+              <i
+                class="bi bi-person-badge position-absolute end-0 bottom-0 p-3"
+                style="font-size: 3rem; opacity: 0.3"
+              ></i>
             </div>
           </div>
         </div>
@@ -39,7 +46,10 @@
                 <h6 class="card-title opacity-75">Total Patients</h6>
                 <h2 class="fw-bold mb-0">{{ stats.total_patients }}</h2>
               </div>
-              <i class="bi bi-people-fill position-absolute end-0 bottom-0 p-3" style="font-size: 3rem; opacity: 0.3;"></i>
+              <i
+                class="bi bi-people-fill position-absolute end-0 bottom-0 p-3"
+                style="font-size: 3rem; opacity: 0.3"
+              ></i>
             </div>
           </div>
         </div>
@@ -51,7 +61,10 @@
                 <h6 class="card-title opacity-75">Total Appointments</h6>
                 <h2 class="fw-bold mb-0">{{ stats.total_appointments }}</h2>
               </div>
-              <i class="bi bi-calendar-check position-absolute end-0 bottom-0 p-3" style="font-size: 3rem; opacity: 0.3;"></i>
+              <i
+                class="bi bi-calendar-check position-absolute end-0 bottom-0 p-3"
+                style="font-size: 3rem; opacity: 0.3"
+              ></i>
             </div>
           </div>
         </div>
@@ -61,32 +74,49 @@
             <div class="card-body d-flex flex-column justify-content-between">
               <div>
                 <h6 class="card-title opacity-75 text-dark">Upcoming</h6>
-                <h2 class="fw-bold mb-0 text-dark">{{ stats.upcoming_appointments }}</h2>
+                <h2 class="fw-bold mb-0 text-dark">
+                  {{ stats.upcoming_appointments }}
+                </h2>
               </div>
-              <i class="bi bi-clock-history position-absolute end-0 bottom-0 p-3 text-dark" style="font-size: 3rem; opacity: 0.2;"></i>
+              <i
+                class="bi bi-clock-history position-absolute end-0 bottom-0 p-3 text-dark"
+                style="font-size: 3rem; opacity: 0.2"
+              ></i>
             </div>
           </div>
         </div>
       </div>
-      
+
       <!-- Quick Actions -->
       <div class="row mb-4">
         <div class="col-12">
           <div class="card shadow-sm">
             <div class="card-header bg-white">
-              <h5 class="mb-0"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>Quick Actions</h5>
+              <h5 class="mb-0">
+                <i class="bi bi-lightning-charge-fill text-warning me-2"></i
+                >Quick Actions
+              </h5>
             </div>
             <div class="card-body">
               <div class="d-flex gap-3 flex-wrap">
-                <router-link to="/admin/doctors" class="btn btn-outline-primary">
+                <router-link
+                  to="/admin/doctors"
+                  class="btn btn-outline-primary"
+                >
                   <i class="bi bi-person-plus-fill me-1"></i> Manage Doctors
                 </router-link>
-                
-                <router-link to="/admin/patients" class="btn btn-outline-success">
+
+                <router-link
+                  to="/admin/patients"
+                  class="btn btn-outline-success"
+                >
                   <i class="bi bi-person-rolodex me-1"></i> Manage Patients
                 </router-link>
-                
-                <router-link to="/admin/appointments" class="btn btn-outline-info">
+
+                <router-link
+                  to="/admin/appointments"
+                  class="btn btn-outline-info"
+                >
                   <i class="bi bi-calendar-week me-1"></i> View Appointments
                 </router-link>
               </div>
@@ -99,8 +129,12 @@
       <div class="row">
         <div class="col-12">
           <div class="card shadow-sm">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-              <h5 class="mb-0"><i class="bi bi-building me-2 text-secondary"></i>Departments</h5>
+            <div
+              class="card-header bg-white d-flex justify-content-between align-items-center"
+            >
+              <h5 class="mb-0">
+                <i class="bi bi-building me-2 text-secondary"></i>Departments
+              </h5>
               <button class="btn btn-sm btn-primary" @click="openDeptModal">
                 <i class="bi bi-plus-lg me-1"></i> Add Department
               </button>
@@ -114,19 +148,41 @@
                       <th>Description</th>
                       <th class="text-center">Doctors</th>
                       <th>Created</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr v-if="departments.length === 0">
-                      <td colspan="4" class="text-center py-4 text-muted">No departments found.</td>
+                      <td colspan="5" class="text-center py-4 text-muted">
+                        No departments found.
+                      </td>
                     </tr>
                     <tr v-for="dept in departments" :key="dept.id">
                       <td class="ps-4 fw-bold text-primary">{{ dept.name }}</td>
-                      <td>{{ dept.description || '-' }}</td>
+                      <td>{{ dept.description || "-" }}</td>
                       <td class="text-center">
-                        <span class="badge bg-secondary rounded-pill">{{ dept.doctors_registered || 0 }}</span>
+                        <span class="badge bg-secondary rounded-pill">{{
+                          dept.doctors_registered || 0
+                        }}</span>
                       </td>
-                      <td>{{ dept.created_at || 'N/A' }}</td>
+                      <td>{{ dept.created_at || "N/A" }}</td>
+                      <td>
+                        <button
+                          class="btn btn-sm btn-outline-primary me-1"
+                          @click="editDepartment(dept)"
+                          title="Edit"
+                        >
+                          <i class="bi bi-pencil-fill"></i>
+                        </button>
+
+                        <button
+                          class="btn btn-sm btn-outline-danger"
+                          @click="deleteDepartment(dept.id)"
+                          title="Delete"
+                        >
+                          <i class="bi bi-trash-fill"></i>
+                        </button>
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -137,42 +193,69 @@
       </div>
     </div>
 
-    <!-- Add Department Modal -->
+    <!-- Add/Edit Department Modal -->
     <div v-if="showDeptModal" class="modal-backdrop fade show"></div>
-    <div class="modal fade" :class="{ 'show d-block': showDeptModal }" tabindex="-1" role="dialog">
+    <div
+      class="modal fade"
+      :class="{ 'show d-block': showDeptModal }"
+      tabindex="-1"
+      role="dialog"
+    >
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Add New Department</h5>
-            <button type="button" class="btn-close" @click="closeDeptModal"></button>
+            <!-- Dynamic Title -->
+            <h5 class="modal-title">
+              {{ editingDeptId ? 'Edit Department' : 'Add New Department' }}
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              @click="closeDeptModal"
+            ></button>
           </div>
           <div class="modal-body">
-            <form @submit.prevent="createDepartment">
+            <form @submit.prevent="saveDepartment">
               <div class="mb-3">
                 <label class="form-label">Department Name *</label>
-                <input 
-                  type="text" 
-                  class="form-control" 
-                  v-model="deptForm.name" 
-                  required 
+                <input
+                  type="text"
+                  class="form-control"
+                  v-model="deptForm.name"
+                  required
                   placeholder="e.g. Cardiology"
                 />
               </div>
               <div class="mb-3">
                 <label class="form-label">Description</label>
-                <textarea 
-                  class="form-control" 
-                  v-model="deptForm.description" 
-                  rows="3" 
+                <textarea
+                  class="form-control"
+                  v-model="deptForm.description"
+                  rows="3"
                   placeholder="Brief description..."
                 ></textarea>
               </div>
 
               <div class="d-flex justify-content-end gap-2">
-                <button type="button" class="btn btn-secondary" @click="closeDeptModal">Cancel</button>
-                <button type="submit" class="btn btn-primary" :disabled="submittingDept">
-                  <span v-if="submittingDept" class="spinner-border spinner-border-sm me-2" role="status"></span>
-                  Create
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  @click="closeDeptModal"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  class="btn btn-primary"
+                  :disabled="submittingDept"
+                >
+                  <span
+                    v-if="submittingDept"
+                    class="spinner-border spinner-border-sm me-2"
+                    role="status"
+                  ></span>
+                  <!-- Dynamic Button Label -->
+                  {{ editingDeptId ? 'Update' : 'Create' }}
                 </button>
               </div>
             </form>
@@ -185,7 +268,7 @@
 
 <script>
 export default {
-  name: 'AdminDashboard',
+  name: "AdminDashboard",
   data() {
     return {
       // Stats Data
@@ -193,23 +276,23 @@ export default {
         total_doctors: 0,
         total_patients: 0,
         total_appointments: 0,
-        upcoming_appointments: 0
+        upcoming_appointments: 0,
       },
       loading: true,
-      error: '',
+      error: "",
 
       // Department Data
       departments: [],
       showDeptModal: false,
       submittingDept: false,
+      editingDeptId: null, 
       deptForm: {
-        name: '',
-        description: ''
-      }
-    }
+        name: "",
+        description: "",
+      },
+    };
   },
   mounted() {
-    // Load both dashboard stats and department list
     this.initData();
   },
   methods: {
@@ -230,34 +313,34 @@ export default {
         const response = await fetch("/api/admin/dashboard", {
           headers: {
             "Content-Type": "application/json",
-            "Auth-Token": localStorage.getItem("auth_token")
+            "Auth-Token": localStorage.getItem("auth_token"),
           },
         });
-        
+
         if (!response.ok) {
           if (response.status === 401) {
-            this.$router.push('/login');
+            this.$router.push("/login");
             return;
-        }
+          }
           throw new Error(`Server error: ${response.status}`);
         }
-        
+
         this.stats = await response.json();
-        
       } catch (error) {
-        console.error('Dashboard Error:', error);
-        this.error = "Failed to load dashboard. " + (error.message || "Server error.");
+        console.error("Dashboard Error:", error);
+        this.error =
+          "Failed to load dashboard. " + (error.message || "Server error.");
       }
     },
 
     // --- DEPARTMENTS LIST ---
     async loadDepartments() {
       try {
-        const response = await fetch('/api/admin/departments', {
-          method: 'GET',
+        const response = await fetch("/api/admin/departments", {
+          method: "GET",
           headers: {
             "Content-Type": "application/json",
-            "Auth-Token": localStorage.getItem("auth_token")
+            "Auth-Token": localStorage.getItem("auth_token"),
           },
         });
 
@@ -269,29 +352,35 @@ export default {
       }
     },
 
-    // --- CREATE DEPARTMENT ---
-    async createDepartment() {
+    // --- SAVE DEPARTMENT (CREATE or UPDATE) ---
+    async saveDepartment() {
       this.submittingDept = true;
       try {
-        const response = await fetch('/api/admin/departments', {
-          method: 'POST',
+        // Determine URL and Method based on editing state
+        const url = this.editingDeptId 
+          ? `/api/admin/departments/${this.editingDeptId}` 
+          : "/api/admin/departments";
+        
+        const method = this.editingDeptId ? "PUT" : "POST";
+
+        const response = await fetch(url, {
+          method: method,
           headers: {
             "Content-Type": "application/json",
-            "Auth-Token": localStorage.getItem("auth_token")
+            "Auth-Token": localStorage.getItem("auth_token"),
           },
-          body: JSON.stringify(this.deptForm)
+          body: JSON.stringify(this.deptForm),
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.message || 'Failed to create department');
+          throw new Error(data.message || `Failed to ${this.editingDeptId ? 'update' : 'create'} department`);
         }
 
-        alert('Department created successfully!');
+        alert(`Department ${this.editingDeptId ? 'updated' : 'created'} successfully!`);
         this.closeDeptModal();
-        this.loadDepartments(); // Refresh list to show new dept
-        
+        this.loadDepartments(); // Refresh list
       } catch (err) {
         alert(err.message);
       } finally {
@@ -299,17 +388,57 @@ export default {
       }
     },
 
+    // --- EDIT DEPARTMENT ---
+    editDepartment(dept) {
+      this.deptForm = {
+        name: dept.name,
+        description: dept.description
+      };
+      this.editingDeptId = dept.id;
+      this.showDeptModal = true;
+    },
+
+   async deleteDepartment(deptId) {
+      if (!confirm("Are you sure you want to delete this department?")) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/admin/departments/${deptId}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            "Auth-Token": localStorage.getItem("auth_token"),
+          },
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to delete department");
+        }
+
+        alert("Department deleted successfully!");
+        this.loadDepartments(); 
+      } catch (err) {
+        console.error(err);
+        alert(err.message);
+      }
+    },
+
     // --- MODAL UTILS ---
     openDeptModal() {
-      this.deptForm = { name: '', description: '' };
+      this.deptForm = { name: "", description: "" };
+      this.editingDeptId = null; // Reset to create mode
       this.showDeptModal = true;
     },
     closeDeptModal() {
       this.showDeptModal = false;
-      this.deptForm = { name: '', description: '' };
-    }
-  }
-}
+      this.deptForm = { name: "", description: "" };
+      this.editingDeptId = null;
+    },
+  },
+};
 </script>
 
 <style scoped>

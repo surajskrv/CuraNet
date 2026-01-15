@@ -298,46 +298,89 @@ def admin_search():
 @roles_accepted('admin')
 def manage_departments():
     try:
+        # --- GET: List All Departments ---
         if request.method == 'GET':
             departments = Department.query.all()
             dept_list = []
+
             for dept in departments:
-                # Calculate the count dynamically based on the actual Doctor table
-                doc_count = Doctor.query.filter_by(department_id=dept.id, is_active=True).count()
-                
+                # Count active doctors in this department
+                doc_count = Doctor.query.filter_by(
+                    department_id=dept.id, 
+                    is_active=True
+                ).count()
+
                 dept_list.append({
                     'id': dept.id,
                     'name': dept.name,
                     'description': dept.description,
-                    'doctors_registered': doc_count, # Use the dynamic count here
-                    'created_at': dept.created_at.strftime('%Y-%m-%d')
+                    'doctors_registered': doc_count,
+                    'created_at': dept.created_at.strftime('%Y-%m-%d') if dept.created_at else None
                 })
+
             return jsonify(dept_list), 200
-        
+
+        # --- POST: Create New Department ---
         elif request.method == 'POST':
-            data = request.get_json()
+            data = request.get_json(silent=True) or {}
             name = data.get('name')
             description = data.get('description', '')
-            
+
             if not name:
                 return jsonify({"message": "Department name is required"}), 400
-            
-            if Department.query.filter_by(name=name).first():
+
+            # Case-insensitive check for existing department
+            if Department.query.filter(Department.name.ilike(name)).first():
                 return jsonify({"message": "Department already exists"}), 409
-            
-            # We don't need to pass doctors_registered here, it defaults to 0 or is calculated on GET
+
             department = Department(name=name, description=description)
             db.session.add(department)
             db.session.commit()
-            
+
             return jsonify({
                 "message": "Department created successfully",
                 "department_id": department.id
             }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error in manage_departments: {str(e)}") # Log to console
+        return jsonify({
+            "message": "Internal Server Error", 
+            "error": str(e)
+        }), 500
+
+@app.route('/api/admin/departments/<int:department_id>', methods=['PUT', 'DELETE'])
+@auth_required('token')
+@roles_accepted('admin')
+def update_delete_department(department_id):
+    try:
+        department = Department.query.get_or_404(department_id)
+        
+        if request.method == 'PUT':
+            data = request.get_json()
+            if 'name' in data:
+                if Department.query.filter(Department.name.ilike(data['name']), Department.id != department_id).first():
+                    return jsonify({"message": "Department name already exists"}), 409
+                department.name = data['name']
+            if 'description' in data:
+                department.description = data['description']
+            
+            db.session.commit()
+            return jsonify({"message": "Department updated successfully"}), 200
+        
+        elif request.method == 'DELETE':
+            doctors_in_dept = Doctor.query.filter_by(department_id=department_id).count()
+            if doctors_in_dept > 0:
+                return jsonify({"message": "Cannot delete department with active doctors"}), 400
+            
+            db.session.delete(department)
+            db.session.commit()
+            return jsonify({"message": "Department deleted successfully"}), 200
             
     except Exception as e:
         db.session.rollback()
-        return jsonify({"message": "Error managing departments", "error": str(e)}), 500
+        return jsonify({"message": "Error updating/deleting department", "error": str(e)}), 500
 
 @app.route('/api/admin/patients/<int:patient_id>', methods=['PUT', 'DELETE'])
 @auth_required('token')
